@@ -1,0 +1,7 @@
+# Copia este archivo como application-dev.properties y completa tu clave local
+spring.datasource.url=jdbc:postgresql://localhost:5432/gestion_db
+spring.datasource.username=postgres
+spring.datasource.password=CAMBIAME
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
