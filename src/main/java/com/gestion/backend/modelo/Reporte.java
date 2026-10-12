@@ -2,6 +2,8 @@ package com.gestion.backend.modelo;
 
 import java.time.Instant;
 
+import org.locationtech.jts.geom.Point;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,6 +47,9 @@ public class Reporte {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "reporte_padre_id")
 	private Reporte reportePadre;
+
+	@Column(name = "ubicacion", nullable = false, columnDefinition = "geometry(Point, 9377)")
+	private Point ubicacion;
 
 	@Enumerated(EnumType.STRING)
 	@Column(length = 100)
