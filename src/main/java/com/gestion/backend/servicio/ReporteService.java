@@ -41,7 +41,7 @@ public class ReporteService {
 		Point ubicacion = servicioGeoespacial.a9377(solicitud.latitud(), solicitud.longitud());
 		reporte.setUbicacion(ubicacion);
 
-		servicioGeoespacial.buscarReportePadre(ubicacion, RADIO_DEDUPLICACION_METROS)
+		servicioGeoespacial.buscarReportePadre(ubicacion, RADIO_DEDUPLICACION_METROS, solicitud.categoriaIa())
 				.ifPresent(padreId -> reporte.setReportePadre(reporteRepository.getReferenceById(padreId)));
 
 		reporte.setDescripcion(solicitud.descripcion());

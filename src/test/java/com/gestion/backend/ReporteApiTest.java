@@ -63,21 +63,27 @@ class ReporteApiTest {
 				""".formatted(usuarioId);
 	}
 
-	private String solicitudEn(Long usuarioId, double latitud, double longitud) {
+	private String solicitudEn(Long usuarioId, double latitud, double longitud, String categoria) {
+		String categoriaJson = categoria != null ? "\"" + categoria + "\"" : "null";
 		return """
 				{
+				  "categoriaIa": %s,
 				  "latitud": %s,
 				  "longitud": %s,
 				  "urlImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
 				  "usuarioId": %d
 				}
-				""".formatted(latitud, longitud, usuarioId);
+				""".formatted(categoriaJson, latitud, longitud, usuarioId);
 	}
 
 	private MvcResult crearReporte(Long usuarioId, double latitud, double longitud) throws Exception {
+		return crearReporte(usuarioId, latitud, longitud, "HUECO_VIA");
+	}
+
+	private MvcResult crearReporte(Long usuarioId, double latitud, double longitud, String categoria) throws Exception {
 		return mockMvc.perform(post("/api/reportes")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(solicitudEn(usuarioId, latitud, longitud)))
+				.content(solicitudEn(usuarioId, latitud, longitud, categoria)))
 				.andExpect(status().isCreated())
 				.andReturn();
 	}
@@ -150,6 +156,25 @@ class ReporteApiTest {
 		assertThat(leerCampo(creacionC, "$.reportePadreId")).isEqualTo(idA);
 
 		MvcResult creacionD = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE + saltoTreintaMetros);
+		assertThat(leerCampo(creacionD, "$.reportePadreId")).isNull();
+	}
+
+	@Test
+	void deduplicacionSoloAgrupaSiCoincideLaCategoria() throws Exception {
+		Long usuarioId = crearUsuarioDePrueba();
+
+		double saltoCuatroMetros = 0.00004;
+
+		MvcResult creacionA = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE, "HUECO_VIA");
+		Number idA = leerCampo(creacionA, "$.id");
+
+		MvcResult creacionB = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE + saltoCuatroMetros, "FUGA_AGUA");
+		assertThat(leerCampo(creacionB, "$.reportePadreId")).isNull();
+
+		MvcResult creacionC = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE + saltoCuatroMetros, "HUECO_VIA");
+		assertThat(leerCampo(creacionC, "$.reportePadreId")).isEqualTo(idA);
+
+		MvcResult creacionD = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE + saltoCuatroMetros, null);
 		assertThat(leerCampo(creacionD, "$.reportePadreId")).isNull();
 	}
 

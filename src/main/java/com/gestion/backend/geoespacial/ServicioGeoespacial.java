@@ -9,6 +9,8 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 
+import com.gestion.backend.modelo.TipoIncidencia;
+
 import jakarta.persistence.EntityManager;
 
 @Service
@@ -47,16 +49,22 @@ public class ServicioGeoespacial {
 		return new CoordenadasGps(((Number) grados[0]).doubleValue(), ((Number) grados[1]).doubleValue());
 	}
 
-	public Optional<Long> buscarReportePadre(Point puntoEnMetros, double radioMetros) {
+	public Optional<Long> buscarReportePadre(Point puntoEnMetros, double radioMetros, TipoIncidencia categoria) {
+		if (categoria == null) {
+			return Optional.empty();
+		}
+
 		String ewkt = "SRID=" + SRID_METROS + ";POINT(" + puntoEnMetros.getX() + " " + puntoEnMetros.getY() + ")";
 
 		List<?> filas = entityManager.createNativeQuery(
 				"SELECT id, reporte_padre_id FROM reportes"
 						+ " WHERE ST_DWithin(ubicacion, ST_GeomFromEWKT(:ewkt), :radio)"
+						+ " AND categoria_ia = :categoria"
 						+ " ORDER BY ubicacion <-> ST_GeomFromEWKT(:ewkt)"
 						+ " LIMIT 1")
 				.setParameter("ewkt", ewkt)
 				.setParameter("radio", radioMetros)
+				.setParameter("categoria", categoria.name())
 				.getResultList();
 
 		if (filas.isEmpty()) {
