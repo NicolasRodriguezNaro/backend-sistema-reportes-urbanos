@@ -1,0 +1,42 @@
+package com.gestion.backend.dto;
+
+import java.time.Instant;
+
+import com.gestion.backend.modelo.EstadoReporte;
+import com.gestion.backend.modelo.Severidad;
+import com.gestion.backend.modelo.TipoIncidencia;
+
+public record ReporteResponse(
+
+		Long id,
+
+		EstadoReporte estado,
+
+		TipoIncidencia categoriaIa,
+
+		Severidad severidadIa,
+
+		Double confianzaIa,
+
+		String descripcion,
+
+		double latitud,
+
+		double longitud,
+
+		String urlImagenHd,
+
+		String urlImagenThumb,
+
+		Instant fechaCreacion,
+
+		Instant fechaActualizacion,
+
+		Long usuarioId,
+
+		Integer barrioId,
+
+		Integer entidadAsignadaId,
+
+		Long reportePadreId) {
+}
