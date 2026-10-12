@@ -174,8 +174,33 @@ class ReporteApiTest {
 		MvcResult creacionC = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE + saltoCuatroMetros, "HUECO_VIA");
 		assertThat(leerCampo(creacionC, "$.reportePadreId")).isEqualTo(idA);
 
-		MvcResult creacionD = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE + saltoCuatroMetros, null);
+		MvcResult creacionD = crearReporte(usuarioId, LATITUD_BASE + 0.003, LONGITUD_BASE, null);
 		assertThat(leerCampo(creacionD, "$.reportePadreId")).isNull();
+		String categoriaDeD = JsonPath.read(creacionD.getResponse().getContentAsString(), "$.categoriaIa");
+		assertThat(categoriaDeD).isNotBlank();
+	}
+
+	@Test
+	void iaCompletaLosCamposFaltantesDeLaClasificacion() throws Exception {
+		Long usuarioId = crearUsuarioDePrueba();
+
+		MvcResult primera = crearReporte(usuarioId, LATITUD_BASE, LONGITUD_BASE, null);
+		String categoriaPrimera = JsonPath.read(primera.getResponse().getContentAsString(), "$.categoriaIa");
+		String severidadPrimera = JsonPath.read(primera.getResponse().getContentAsString(), "$.severidadIa");
+		Double confianzaPrimera = JsonPath.read(primera.getResponse().getContentAsString(), "$.confianzaIa");
+		String descripcionPrimera = JsonPath.read(primera.getResponse().getContentAsString(), "$.descripcion");
+
+		assertThat(categoriaPrimera).isNotBlank();
+		assertThat(severidadPrimera).isNotBlank();
+		assertThat(descripcionPrimera).isNotBlank();
+		assertThat(confianzaPrimera).isBetween(0.55, 0.99);
+
+		MvcResult segunda = crearReporte(usuarioId, LATITUD_BASE + 0.003, LONGITUD_BASE, null);
+		String categoriaSegunda = JsonPath.read(segunda.getResponse().getContentAsString(), "$.categoriaIa");
+		String severidadSegunda = JsonPath.read(segunda.getResponse().getContentAsString(), "$.severidadIa");
+
+		assertThat(categoriaSegunda).isEqualTo(categoriaPrimera);
+		assertThat(severidadSegunda).isEqualTo(severidadPrimera);
 	}
 
 	@Test
