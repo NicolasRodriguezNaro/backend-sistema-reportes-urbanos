@@ -62,9 +62,15 @@ SELECT nombre,
   geom
 FROM sitios_import;
 
+-- 3) Eliminar los sitios demo que siembra la migracion V2
+DELETE FROM sitios_interes WHERE nombre LIKE '%(demo)%';
+
 DROP TABLE sitios_import;
 SQL
 ```
+
+Los sitios demo (Hospital y Colegio de demostración, sembrados por V2) se eliminan en el
+paso 3. Sin ese `DELETE`, una base reconstruida desde cero quedaría con datos ficticios.
 
 Solo los tipos criticos (`HOSPITAL`, `INSTITUCION_EDUCATIVA`, `UNIVERSIDAD`, `VIA_ARTERIA`)
 participan del razonamiento semantico; el resto se conserva para el dashboard/mapa.
