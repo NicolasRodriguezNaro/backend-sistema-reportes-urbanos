@@ -20,7 +20,9 @@ import com.jayway.jsonpath.JsonPath;
 
 import jakarta.persistence.EntityManager;
 
-@SpringBootTest(properties = "gestion.semantica.ruta-tdb=target/jena-test-web")
+@SpringBootTest(properties = {
+		"gestion.semantica.ruta-tdb=target/jena-test-web",
+		"gestion.almacenamiento.ruta-local=target/uploads-test-web" })
 @AutoConfigureMockMvc
 @Transactional
 class SemanticaTest {
@@ -62,7 +64,7 @@ class SemanticaTest {
 				  "severidadIa": "%s",
 				  "latitud": %s,
 				  "longitud": %s,
-				  "urlImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
+				  "claveImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
 				  "usuarioId": %d
 				}
 				""".formatted(categoria, severidad, latitud, longitud, usuarioId);

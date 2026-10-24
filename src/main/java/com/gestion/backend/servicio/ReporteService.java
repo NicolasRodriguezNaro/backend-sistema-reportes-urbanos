@@ -4,6 +4,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gestion.backend.almacenamiento.AlmacenamientoArchivos;
 import com.gestion.backend.dto.ReporteCreacionRequest;
 import com.gestion.backend.dto.ReporteResponse;
 import com.gestion.backend.error.RecursoNoEncontradoException;
@@ -33,11 +34,12 @@ public class ReporteService {
 	private final ServicioGeoespacial servicioGeoespacial;
 	private final ClasificadorIncidencias clasificadorIncidencias;
 	private final ServicioSemantico servicioSemantico;
+	private final AlmacenamientoArchivos almacenamientoArchivos;
 
 	public ReporteService(ReporteRepository reporteRepository, UsuarioRepository usuarioRepository,
 			EntidadRepository entidadRepository, BarrioRepository barrioRepository,
 			ServicioGeoespacial servicioGeoespacial, ClasificadorIncidencias clasificadorIncidencias,
-			ServicioSemantico servicioSemantico) {
+			ServicioSemantico servicioSemantico, AlmacenamientoArchivos almacenamientoArchivos) {
 		this.reporteRepository = reporteRepository;
 		this.usuarioRepository = usuarioRepository;
 		this.entidadRepository = entidadRepository;
@@ -45,6 +47,7 @@ public class ReporteService {
 		this.servicioGeoespacial = servicioGeoespacial;
 		this.clasificadorIncidencias = clasificadorIncidencias;
 		this.servicioSemantico = servicioSemantico;
+		this.almacenamientoArchivos = almacenamientoArchivos;
 	}
 
 	@Transactional
@@ -55,7 +58,7 @@ public class ReporteService {
 
 		ResultadoClasificacion clasificacion = null;
 		if (solicitud.categoriaIa() == null || solicitud.severidadIa() == null || solicitud.descripcion() == null) {
-			clasificacion = clasificadorIncidencias.clasificar(solicitud.urlImagenHd());
+			clasificacion = clasificadorIncidencias.clasificar(solicitud.claveImagenHd());
 		}
 
 		TipoIncidencia categoria = solicitud.categoriaIa() != null ? solicitud.categoriaIa() : clasificacion.categoria();
@@ -81,8 +84,7 @@ public class ReporteService {
 		if (clasificacion != null) {
 			reporte.setConfianzaIa(clasificacion.confianza());
 		}
-		reporte.setUrlImagenHd(solicitud.urlImagenHd());
-		reporte.setUrlImagenThumb(solicitud.urlImagenThumb());
+		reporte.setUrlImagenHd(solicitud.claveImagenHd());
 
 		Reporte guardado = reporteRepository.save(reporte);
 
@@ -104,6 +106,7 @@ public class ReporteService {
 
 	private ReporteResponse aRespuesta(Reporte reporte) {
 		ServicioGeoespacial.CoordenadasGps gps = servicioGeoespacial.a4326(reporte.getUbicacion());
+		String claveImagenHd = reporte.getUrlImagenHd();
 
 		return new ReporteResponse(
 				reporte.getId(),
@@ -115,13 +118,24 @@ public class ReporteService {
 				reporte.getDescripcion(),
 				gps.latitud(),
 				gps.longitud(),
-				reporte.getUrlImagenHd(),
-				reporte.getUrlImagenThumb(),
+				claveImagenHd,
+				resolverUrl(claveImagenHd),
+				resolverUrl(reporte.getUrlImagenThumb()),
 				reporte.getFechaCreacion(),
 				reporte.getFechaActualizacion(),
 				reporte.getUsuario().getId(),
 				reporte.getBarrio() != null ? reporte.getBarrio().getGid() : null,
 				reporte.getEntidadAsignada() != null ? reporte.getEntidadAsignada().getId() : null,
 				reporte.getReportePadre() != null ? reporte.getReportePadre().getId() : null);
+	}
+
+	private String resolverUrl(String valor) {
+		if (valor == null) {
+			return null;
+		}
+		if (valor.startsWith("http://") || valor.startsWith("https://")) {
+			return valor;
+		}
+		return almacenamientoArchivos.urlDe(valor);
 	}
 }

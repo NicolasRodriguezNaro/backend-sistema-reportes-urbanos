@@ -23,7 +23,9 @@ import com.jayway.jsonpath.JsonPath;
 
 import jakarta.persistence.EntityManager;
 
-@SpringBootTest(properties = "gestion.semantica.ruta-tdb=target/jena-test-web")
+@SpringBootTest(properties = {
+		"gestion.semantica.ruta-tdb=target/jena-test-web",
+		"gestion.almacenamiento.ruta-local=target/uploads-test-web" })
 @AutoConfigureMockMvc
 @Transactional
 class ReporteApiTest {
@@ -57,7 +59,7 @@ class ReporteApiTest {
 				  "severidadIa": "ALTA",
 				  "latitud": 3.4516,
 				  "longitud": -76.5320,
-				  "urlImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
+				  "claveImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
 				  "usuarioId": %d
 				}
 				""".formatted(usuarioId);
@@ -70,7 +72,7 @@ class ReporteApiTest {
 				  "categoriaIa": %s,
 				  "latitud": %s,
 				  "longitud": %s,
-				  "urlImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
+				  "claveImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
 				  "usuarioId": %d
 				}
 				""".formatted(categoriaJson, latitud, longitud, usuarioId);
@@ -207,7 +209,7 @@ class ReporteApiTest {
 	void solicitudInvalidaResponde400ConDetalleDeCampos() throws Exception {
 		String solicitud = """
 				{
-				  "urlImagenHd": "",
+				  "claveImagenHd": "",
 				  "usuarioId": null
 				}
 				""";
@@ -219,7 +221,7 @@ class ReporteApiTest {
 				.andExpect(jsonPath("$.error").value("Datos invalidos"))
 				.andExpect(jsonPath("$.campos.latitud").exists())
 				.andExpect(jsonPath("$.campos.longitud").exists())
-				.andExpect(jsonPath("$.campos.urlImagenHd").exists())
+				.andExpect(jsonPath("$.campos.claveImagenHd").exists())
 				.andExpect(jsonPath("$.campos.usuarioId").exists());
 	}
 
@@ -229,7 +231,7 @@ class ReporteApiTest {
 				{
 				  "latitud": 3.4516,
 				  "longitud": -76.5320,
-				  "urlImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
+				  "claveImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
 				  "usuarioId": 999999,
 				  "categoriaIa": "NO_EXISTE"
 				}

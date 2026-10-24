@@ -28,12 +28,9 @@ public record ReporteCreacionRequest(
 		@DecimalMax(value = "180.0", message = "La longitud maxima es 180")
 		Double longitud,
 
-		@NotBlank(message = "La URL de la imagen HD es obligatoria")
-		@Size(max = 500, message = "La URL de la imagen HD no puede superar 500 caracteres")
-		String urlImagenHd,
-
-		@Size(max = 500, message = "La URL del thumbnail no puede superar 500 caracteres")
-		String urlImagenThumb,
+		@NotBlank(message = "La clave de la imagen HD es obligatoria")
+		@Size(max = 500, message = "La clave de la imagen HD no puede superar 500 caracteres")
+		String claveImagenHd,
 
 		@NotNull(message = "El usuarioId es obligatorio")
 		Long usuarioId) {

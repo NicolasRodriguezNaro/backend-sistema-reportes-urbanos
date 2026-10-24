@@ -27,6 +27,8 @@ public record ReporteResponse(
 
 		double longitud,
 
+		String claveImagenHd,
+
 		String urlImagenHd,
 
 		String urlImagenThumb,
