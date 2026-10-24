@@ -14,8 +14,12 @@ import com.gestion.backend.modelo.Reporte;
 import com.gestion.backend.modelo.Severidad;
 import com.gestion.backend.modelo.TipoIncidencia;
 import com.gestion.backend.modelo.Usuario;
+import com.gestion.backend.repositorio.BarrioRepository;
+import com.gestion.backend.repositorio.EntidadRepository;
 import com.gestion.backend.repositorio.ReporteRepository;
 import com.gestion.backend.repositorio.UsuarioRepository;
+import com.gestion.backend.semantica.AnalisisSemantico;
+import com.gestion.backend.semantica.ServicioSemantico;
 
 @Service
 public class ReporteService {
@@ -24,15 +28,23 @@ public class ReporteService {
 
 	private final ReporteRepository reporteRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final EntidadRepository entidadRepository;
+	private final BarrioRepository barrioRepository;
 	private final ServicioGeoespacial servicioGeoespacial;
 	private final ClasificadorIncidencias clasificadorIncidencias;
+	private final ServicioSemantico servicioSemantico;
 
 	public ReporteService(ReporteRepository reporteRepository, UsuarioRepository usuarioRepository,
-			ServicioGeoespacial servicioGeoespacial, ClasificadorIncidencias clasificadorIncidencias) {
+			EntidadRepository entidadRepository, BarrioRepository barrioRepository,
+			ServicioGeoespacial servicioGeoespacial, ClasificadorIncidencias clasificadorIncidencias,
+			ServicioSemantico servicioSemantico) {
 		this.reporteRepository = reporteRepository;
 		this.usuarioRepository = usuarioRepository;
+		this.entidadRepository = entidadRepository;
+		this.barrioRepository = barrioRepository;
 		this.servicioGeoespacial = servicioGeoespacial;
 		this.clasificadorIncidencias = clasificadorIncidencias;
+		this.servicioSemantico = servicioSemantico;
 	}
 
 	@Transactional
@@ -57,6 +69,9 @@ public class ReporteService {
 		Point ubicacion = servicioGeoespacial.a9377(solicitud.latitud(), solicitud.longitud());
 		reporte.setUbicacion(ubicacion);
 
+		servicioGeoespacial.buscarBarrio(ubicacion)
+				.ifPresent(barrioId -> reporte.setBarrio(barrioRepository.getReferenceById(barrioId)));
+
 		servicioGeoespacial.buscarReportePadre(ubicacion, RADIO_DEDUPLICACION_METROS, categoria)
 				.ifPresent(padreId -> reporte.setReportePadre(reporteRepository.getReferenceById(padreId)));
 
@@ -70,6 +85,12 @@ public class ReporteService {
 		reporte.setUrlImagenThumb(solicitud.urlImagenThumb());
 
 		Reporte guardado = reporteRepository.save(reporte);
+
+		AnalisisSemantico analisis = servicioSemantico.analizar(guardado);
+		guardado.setPrioridadCalculada(analisis.prioridad());
+		if (analisis.entidadId() != null) {
+			guardado.setEntidadAsignada(entidadRepository.getReferenceById(analisis.entidadId()));
+		}
 
 		return aRespuesta(guardado);
 	}
@@ -89,6 +110,7 @@ public class ReporteService {
 				reporte.getEstado(),
 				reporte.getCategoriaIa(),
 				reporte.getSeveridadIa(),
+				reporte.getPrioridadCalculada(),
 				reporte.getConfianzaIa(),
 				reporte.getDescripcion(),
 				gps.latitud(),

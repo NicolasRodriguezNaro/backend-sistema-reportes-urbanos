@@ -38,7 +38,7 @@ public class ServicioGeoespacial {
 	}
 
 	public CoordenadasGps a4326(Point puntoEnMetros) {
-		String ewkt = "SRID=" + SRID_METROS + ";POINT(" + puntoEnMetros.getX() + " " + puntoEnMetros.getY() + ")";
+		String ewkt = ewkt(puntoEnMetros);
 
 		Object[] grados = (Object[]) entityManager.createNativeQuery(
 				"SELECT ST_Y(g), ST_X(g) FROM (SELECT ST_Transform(ST_GeomFromEWKT(:ewkt), "
@@ -54,7 +54,7 @@ public class ServicioGeoespacial {
 			return Optional.empty();
 		}
 
-		String ewkt = "SRID=" + SRID_METROS + ";POINT(" + puntoEnMetros.getX() + " " + puntoEnMetros.getY() + ")";
+		String ewkt = ewkt(puntoEnMetros);
 
 		List<?> filas = entityManager.createNativeQuery(
 				"SELECT id, reporte_padre_id FROM reportes"
@@ -75,6 +75,22 @@ public class ServicioGeoespacial {
 		Number id = (Number) fila[0];
 		Number padreId = (Number) fila[1];
 		return Optional.of(padreId != null ? padreId.longValue() : id.longValue());
+	}
+
+	public Optional<Integer> buscarBarrio(Point ubicacion) {
+		List<?> filas = entityManager.createNativeQuery(
+				"SELECT gid FROM barrios WHERE ST_Intersects(geom, ST_GeomFromEWKT(:ewkt)) LIMIT 1")
+				.setParameter("ewkt", ewkt(ubicacion))
+				.getResultList();
+
+		if (filas.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(((Number) filas.get(0)).intValue());
+	}
+
+	private String ewkt(Point punto) {
+		return "SRID=" + SRID_METROS + ";POINT(" + punto.getX() + " " + punto.getY() + ")";
 	}
 
 	public record CoordenadasGps(double latitud, double longitud) {

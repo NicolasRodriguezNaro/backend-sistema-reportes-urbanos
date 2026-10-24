@@ -23,7 +23,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import jakarta.persistence.EntityManager;
 
-@SpringBootTest
+@SpringBootTest(properties = "gestion.semantica.ruta-tdb=target/jena-test-web")
 @AutoConfigureMockMvc
 @Transactional
 class ReporteApiTest {

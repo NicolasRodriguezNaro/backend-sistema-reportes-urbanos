@@ -1,0 +1,53 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:   <http://infraestructura.org/ontologia#> .
+
+# Clausura transitiva de la jerarquia de clases.
+[clausuraSubclase:
+    (?a rdfs:subClassOf ?b), (?b rdfs:subClassOf ?c)
+    -> (?a rdfs:subClassOf ?c)]
+
+# Asignacion automatica: la entidad competente para el tipo de incidencia.
+[asignarEntidad:
+    (?r rdf:type ?incidencia),
+    (?incidencia rdfs:subClassOf ex:IncidenciaUrbana),
+    (?entidad ex:esCompetentePara ?incidencia)
+    -> (?r ex:asignadoA ?entidad)]
+
+# Zona critica: la incidencia cercana a una zona critica es atencion critica.
+[marcarAtencionCritica:
+    (?r ex:cercanoA ?sitio),
+    (?sitio rdf:type ?tipoSitio),
+    (?tipoSitio rdfs:subClassOf ex:ZonaCritica)
+    -> (?r rdf:type ex:AtencionCritica)]
+
+# Prioridad base segun la severidad reportada por la IA.
+[prioridadBaseBaja:
+    (?r ex:severidadIA "BAJA")
+    -> (?r ex:prioridadCalculada "BAJA")]
+
+[prioridadBaseMedia:
+    (?r ex:severidadIA "MEDIA")
+    -> (?r ex:prioridadCalculada "MEDIA")]
+
+[prioridadBaseAlta:
+    (?r ex:severidadIA "ALTA")
+    -> (?r ex:prioridadCalculada "ALTA")]
+
+[prioridadBaseCritica:
+    (?r ex:severidadIA "CRITICA")
+    -> (?r ex:prioridadCalculada "CRITICA")]
+
+# Elevacion por zona critica: al menos ALTA.
+[prioridadZonaAlta:
+    (?r rdf:type ex:AtencionCritica)
+    -> (?r ex:prioridadCalculada "ALTA")]
+
+# Elevacion maxima: zona critica + severidad alta o critica.
+[prioridadZonaCriticaSeveridadAlta:
+    (?r rdf:type ex:AtencionCritica), (?r ex:severidadIA "ALTA")
+    -> (?r ex:prioridadCalculada "CRITICA")]
+
+[prioridadZonaCriticaSeveridadCritica:
+    (?r rdf:type ex:AtencionCritica), (?r ex:severidadIA "CRITICA")
+    -> (?r ex:prioridadCalculada "CRITICA")]

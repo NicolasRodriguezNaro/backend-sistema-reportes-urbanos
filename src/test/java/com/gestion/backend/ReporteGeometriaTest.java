@@ -21,7 +21,7 @@ import com.gestion.backend.repositorio.UsuarioRepository;
 
 import jakarta.persistence.EntityManager;
 
-@SpringBootTest
+@SpringBootTest(properties = "gestion.semantica.ruta-tdb=target/jena-test-base")
 @Transactional
 class ReporteGeometriaTest {
 

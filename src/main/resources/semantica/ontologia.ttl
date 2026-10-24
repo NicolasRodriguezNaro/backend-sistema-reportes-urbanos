@@ -1,0 +1,186 @@
+@prefix ex:   <http://infraestructura.org/ontologia#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<http://infraestructura.org/ontologia> rdf:type owl:Ontology ;
+    owl:versionInfo "1.1.0" ;
+    rdfs:comment "Ontologia para la gestion, razonamiento de prioridad y asignacion de reportes urbanos. Version fusionada 1.1.0 (agrega Universidad como zona critica)." .
+
+#################################################################
+#    Clases raiz
+#################################################################
+
+ex:IncidenciaUrbana rdf:type owl:Class ;
+    rdfs:label "Incidencia urbana" .
+
+ex:SitioInteres rdf:type owl:Class ;
+    rdfs:label "Sitio de interes" .
+
+ex:EntidadResponsable rdf:type owl:Class ;
+    rdfs:label "Entidad responsable" .
+
+ex:IncidenciaUrbana owl:disjointWith ex:SitioInteres, ex:EntidadResponsable .
+ex:SitioInteres owl:disjointWith ex:EntidadResponsable .
+
+#################################################################
+#    Jerarquia de incidencias urbanas
+#################################################################
+
+ex:DeterioroVial rdf:type owl:Class ;
+    rdfs:subClassOf ex:IncidenciaUrbana ;
+    rdfs:label "Deterioro vial" .
+
+ex:HuecoVia rdf:type owl:Class ;
+    rdfs:subClassOf ex:DeterioroVial ;
+    rdfs:label "Hueco en la via" .
+
+ex:FallaSemaforica rdf:type owl:Class ;
+    rdfs:subClassOf ex:DeterioroVial ;
+    rdfs:label "Falla semaforica" .
+
+ex:FallaServicioPublico rdf:type owl:Class ;
+    rdfs:subClassOf ex:IncidenciaUrbana ;
+    rdfs:label "Falla de servicio publico" .
+
+ex:FugaAgua rdf:type owl:Class ;
+    rdfs:subClassOf ex:FallaServicioPublico ;
+    rdfs:label "Fuga de agua" .
+
+ex:FallaAlumbrado rdf:type owl:Class ;
+    rdfs:subClassOf ex:FallaServicioPublico ;
+    rdfs:label "Falla de alumbrado" .
+
+ex:ResiduoUrbano rdf:type owl:Class ;
+    rdfs:subClassOf ex:IncidenciaUrbana ;
+    rdfs:label "Residuo urbano" .
+
+ex:AcumulacionBasura rdf:type owl:Class ;
+    rdfs:subClassOf ex:ResiduoUrbano ;
+    rdfs:label "Acumulacion de basura" .
+
+ex:Escombros rdf:type owl:Class ;
+    rdfs:subClassOf ex:ResiduoUrbano ;
+    rdfs:label "Escombros" .
+
+ex:AtencionCritica rdf:type owl:Class ;
+    rdfs:subClassOf ex:IncidenciaUrbana ;
+    rdfs:label "Atencion critica" ;
+    rdfs:comment "Clase inferida por regla cuando la incidencia esta cerca de una zona critica." .
+
+#################################################################
+#    Jerarquia de sitios de interes y zonas criticas
+#################################################################
+
+ex:ZonaCritica rdf:type owl:Class ;
+    rdfs:subClassOf ex:SitioInteres ;
+    rdfs:label "Zona critica" .
+
+ex:CentroSalud rdf:type owl:Class ;
+    rdfs:subClassOf ex:ZonaCritica ;
+    rdfs:label "Centro de salud" .
+
+ex:InstitucionEducativa rdf:type owl:Class ;
+    rdfs:subClassOf ex:ZonaCritica ;
+    rdfs:label "Institucion educativa" .
+
+ex:ViaPrincipal rdf:type owl:Class ;
+    rdfs:subClassOf ex:ZonaCritica ;
+    rdfs:label "Via principal" .
+
+ex:Hospital rdf:type owl:Class ;
+    rdfs:subClassOf ex:CentroSalud ;
+    rdfs:label "Hospital" .
+
+ex:Colegio rdf:type owl:Class ;
+    rdfs:subClassOf ex:InstitucionEducativa ;
+    rdfs:label "Colegio" .
+
+ex:Universidad rdf:type owl:Class ;
+    rdfs:subClassOf ex:InstitucionEducativa ;
+    rdfs:label "Universidad" .
+
+ex:Avenida rdf:type owl:Class ;
+    rdfs:subClassOf ex:ViaPrincipal ;
+    rdfs:label "Avenida" .
+
+#################################################################
+#    Jerarquia de entidades responsables
+#################################################################
+
+ex:SecretariaObrasPublicas rdf:type owl:Class ;
+    rdfs:subClassOf ex:EntidadResponsable ;
+    rdfs:label "Secretaria de Obras Publicas" .
+
+ex:EmpresaServiciosPublicos rdf:type owl:Class ;
+    rdfs:subClassOf ex:EntidadResponsable ;
+    rdfs:label "Empresa de Servicios Publicos" .
+
+ex:EmpresaAseo rdf:type owl:Class ;
+    rdfs:subClassOf ex:EntidadResponsable ;
+    rdfs:label "Empresa de Aseo" .
+
+#################################################################
+#    Propiedades de objeto
+#################################################################
+
+ex:cercanoA rdf:type owl:ObjectProperty ;
+    rdfs:domain ex:IncidenciaUrbana ;
+    rdfs:range ex:SitioInteres ;
+    rdfs:label "cercano a" .
+
+ex:esCompetentePara rdf:type owl:ObjectProperty ;
+    rdfs:domain ex:EntidadResponsable ;
+    rdfs:range ex:IncidenciaUrbana ;
+    rdfs:label "es competente para" .
+
+ex:asignadoA rdf:type owl:ObjectProperty ;
+    rdfs:domain ex:IncidenciaUrbana ;
+    rdfs:range ex:EntidadResponsable ;
+    rdfs:label "asignado a" .
+
+#################################################################
+#    Propiedades de datos
+#################################################################
+
+ex:reporteId rdf:type owl:DatatypeProperty ;
+    rdfs:domain ex:IncidenciaUrbana ;
+    rdfs:range xsd:integer .
+
+ex:sitioId rdf:type owl:DatatypeProperty ;
+    rdfs:domain ex:SitioInteres ;
+    rdfs:range xsd:integer .
+
+ex:entidadId rdf:type owl:DatatypeProperty ;
+    rdfs:domain ex:EntidadResponsable ;
+    rdfs:range xsd:integer .
+
+ex:severidadIA rdf:type owl:DatatypeProperty ;
+    rdfs:domain ex:IncidenciaUrbana ;
+    rdfs:range xsd:string .
+
+ex:confianzaIA rdf:type owl:DatatypeProperty ;
+    rdfs:domain ex:IncidenciaUrbana ;
+    rdfs:range xsd:double .
+
+ex:prioridadCalculada rdf:type owl:DatatypeProperty ;
+    rdfs:domain ex:IncidenciaUrbana ;
+    rdfs:range xsd:string .
+
+ex:distanciaMetros rdf:type owl:DatatypeProperty ;
+    rdfs:domain ex:IncidenciaUrbana ;
+    rdfs:range xsd:double ;
+    rdfs:comment "Distancia al sitio critico mas cercano, en metros." .
+
+#################################################################
+#    Politica de competencias (los individuos se sincronizan
+#    desde PostgreSQL; sus IRIs canonicas son Entidad_{id})
+#################################################################
+
+ex:Entidad_1 ex:esCompetentePara ex:HuecoVia .
+
+ex:Entidad_2 ex:esCompetentePara ex:FugaAgua .
+ex:Entidad_2 ex:esCompetentePara ex:FallaAlumbrado .
+
+ex:Entidad_3 ex:esCompetentePara ex:AcumulacionBasura .
