@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import com.gestion.backend.error.CredencialesInvalidasException;
+
 @RestControllerAdvice
 public class ManejadorGlobalErrores {
 
@@ -55,5 +57,13 @@ public class ManejadorGlobalErrores {
 				"error", "Solicitud invalida",
 				"mensaje", excepcion.getMessage());
 		return ResponseEntity.badRequest().body(cuerpo);
+	}
+
+	@ExceptionHandler(CredencialesInvalidasException.class)
+	public ResponseEntity<Map<String, Object>> manejarCredencialesInvalidas(CredencialesInvalidasException excepcion) {
+		Map<String, Object> cuerpo = Map.of(
+				"error", "No autenticado",
+				"mensaje", "Email o contrasena incorrectos");
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(cuerpo);
 	}
 }

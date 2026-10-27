@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.gestion.backend.modelo.RolUsuario;
 import com.gestion.backend.modelo.Usuario;
 import com.gestion.backend.repositorio.UsuarioRepository;
+import com.gestion.backend.seguridad.ServicioTokens;
 import com.jayway.jsonpath.JsonPath;
 
 import jakarta.persistence.EntityManager;
@@ -36,16 +37,23 @@ class BarrioTest {
 	@Autowired
 	private EntityManager entityManager;
 
-	private Long crearUsuarioDePrueba() {
+	@Autowired
+	private ServicioTokens servicioTokens;
+
+	private Usuario crearUsuarioDePrueba() {
 		Usuario usuario = new Usuario();
 		usuario.setNombre("Usuario Barrio");
 		usuario.setEmail("prueba.barrio@test.local");
 		usuario.setPasswordHash("no-aplica");
 		usuario.setRol(RolUsuario.CIUDADANO);
-		return usuarioRepository.save(usuario).getId();
+		return usuarioRepository.save(usuario);
 	}
 
-	private MvcResult crearReporte(Long usuarioId, double latitud, double longitud, String categoria,
+	private String autorizacion(Usuario usuario) {
+		return "Bearer " + servicioTokens.generar(usuario).token();
+	}
+
+	private MvcResult crearReporte(String autorizacion, double latitud, double longitud, String categoria,
 			String severidad) throws Exception {
 		String solicitud = """
 				{
@@ -53,12 +61,12 @@ class BarrioTest {
 				  "severidadIa": "%s",
 				  "latitud": %s,
 				  "longitud": %s,
-				  "claveImagenHd": "https://almacenamiento.local/reportes/foto.jpg",
-				  "usuarioId": %d
+				  "claveImagenHd": "https://almacenamiento.local/reportes/foto.jpg"
 				}
-				""".formatted(categoria, severidad, latitud, longitud, usuarioId);
+				""".formatted(categoria, severidad, latitud, longitud);
 
 		return mockMvc.perform(post("/api/reportes")
+				.header("Authorization", autorizacion)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(solicitud))
 				.andExpect(status().isCreated())
@@ -67,7 +75,8 @@ class BarrioTest {
 
 	@Test
 	void reporteDentroDeUnBarrioQuedaAsignado() throws Exception {
-		Long usuarioId = crearUsuarioDePrueba();
+		Usuario usuario = crearUsuarioDePrueba();
+		String autorizacion = autorizacion(usuario);
 
 		Object[] fila = (Object[]) entityManager.createNativeQuery(
 				"SELECT b.gid, ST_Y(ST_Transform(ST_PointOnSurface(b.geom), 4326)),"
@@ -79,7 +88,7 @@ class BarrioTest {
 		double latitud = ((Number) fila[1]).doubleValue();
 		double longitud = ((Number) fila[2]).doubleValue();
 
-		MvcResult resultado = crearReporte(usuarioId, latitud, longitud, "FALLA_ALUMBRADO", "BAJA");
+		MvcResult resultado = crearReporte(autorizacion, latitud, longitud, "FALLA_ALUMBRADO", "BAJA");
 
 		int barrioAsignado = ((Number) JsonPath.read(resultado.getResponse().getContentAsString(), "$.barrioId"))
 				.intValue();
@@ -88,9 +97,10 @@ class BarrioTest {
 
 	@Test
 	void reporteFueraDeCoberturaNoTieneBarrio() throws Exception {
-		Long usuarioId = crearUsuarioDePrueba();
+		Usuario usuario = crearUsuarioDePrueba();
+		String autorizacion = autorizacion(usuario);
 
-		MvcResult resultado = crearReporte(usuarioId, 3.4516, -76.5320, "HUECO_VIA", "MEDIA");
+		MvcResult resultado = crearReporte(autorizacion, 3.4516, -76.5320, "HUECO_VIA", "MEDIA");
 
 		Object barrioId = JsonPath.read(resultado.getResponse().getContentAsString(), "$.barrioId");
 		assertThat(barrioId).isNull();

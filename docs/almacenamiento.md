@@ -46,6 +46,9 @@ AlmacenamientoArchivos  (interfaz)
 
 ## 3. API
 
+> **Autenticación (fase de seguridad):** todos los endpoints de esta sección requieren
+> `Authorization: Bearer <token>`; solo `/api/auth/**` es público. Ver `docs/seguridad.md`.
+
 ### Subir una imagen (multipart)
 
 ```http
@@ -187,6 +190,6 @@ curl -X POST http://localhost:8080/api/archivos -F "archivo=@C:\ruta\foto.jpg"
 
 ## 7. Verificación automatizada
 
-Los tests (`19/19`) usan el perfil `dev` y el adaptador local, por lo que **no requieren
+Los tests (`26/26`) usan el perfil `dev` y el adaptador local, por lo que **no requieren
 Docker**. `ArchivoTest` cubre: subida y descarga del contenido exacto, formato inválido,
 archivo vacío y creación de reporte con la clave subida devolviendo la URL resuelta.

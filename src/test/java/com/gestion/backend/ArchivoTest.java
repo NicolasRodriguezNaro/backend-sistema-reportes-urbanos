@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.gestion.backend.modelo.RolUsuario;
 import com.gestion.backend.modelo.Usuario;
 import com.gestion.backend.repositorio.UsuarioRepository;
+import com.gestion.backend.seguridad.ServicioTokens;
 import com.jayway.jsonpath.JsonPath;
 
 @SpringBootTest(properties = {
@@ -42,22 +43,37 @@ class ArchivoTest {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
-	private Long crearUsuarioDePrueba() {
+	@Autowired
+	private ServicioTokens servicioTokens;
+
+	private Usuario crearUsuarioDePrueba() {
 		Usuario usuario = new Usuario();
 		usuario.setNombre("Usuario Archivos");
 		usuario.setEmail("prueba.archivos@test.local");
 		usuario.setPasswordHash("no-aplica");
 		usuario.setRol(RolUsuario.CIUDADANO);
-		return usuarioRepository.save(usuario).getId();
+		return usuarioRepository.save(usuario);
+	}
+
+	private String autorizacion(Usuario usuario) {
+		return "Bearer " + servicioTokens.generar(usuario).token();
+	}
+
+	private MvcResult subirImagen(String autorizacion) throws Exception {
+		MockMultipartFile archivo = new MockMultipartFile("archivo", "foto.jpg", "image/jpeg", IMAGEN);
+		return mockMvc.perform(multipart("/api/archivos")
+				.file(archivo)
+				.header("Authorization", autorizacion))
+				.andExpect(status().isCreated())
+				.andReturn();
 	}
 
 	@Test
 	void subirImagenDevuelveClaveYUrlAccesible() throws Exception {
-		MockMultipartFile archivo = new MockMultipartFile("archivo", "foto.jpg", "image/jpeg", IMAGEN);
+		Usuario usuario = crearUsuarioDePrueba();
+		String autorizacion = autorizacion(usuario);
 
-		MvcResult subida = mockMvc.perform(multipart("/api/archivos").file(archivo))
-				.andExpect(status().isCreated())
-				.andReturn();
+		MvcResult subida = subirImagen(autorizacion);
 
 		String cuerpo = subida.getResponse().getContentAsString();
 		String clave = JsonPath.read(cuerpo, "$.clave");
@@ -66,7 +82,8 @@ class ArchivoTest {
 		assertThat(clave).startsWith("incidentes/").endsWith(".jpg");
 		assertThat(url).contains(clave);
 
-		mockMvc.perform(get(URI.create(url).getPath()))
+		mockMvc.perform(get(URI.create(url).getPath())
+				.header("Authorization", autorizacion))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType(MediaType.IMAGE_JPEG))
 				.andExpect(content().bytes(IMAGEN));
@@ -74,31 +91,39 @@ class ArchivoTest {
 
 	@Test
 	void archivoQueNoEsImagenResponde400() throws Exception {
+		Usuario usuario = crearUsuarioDePrueba();
+		String autorizacion = autorizacion(usuario);
+
 		MockMultipartFile archivo = new MockMultipartFile("archivo", "nota.txt", "text/plain",
 				"hola".getBytes(StandardCharsets.UTF_8));
 
-		mockMvc.perform(multipart("/api/archivos").file(archivo))
+		mockMvc.perform(multipart("/api/archivos")
+				.file(archivo)
+				.header("Authorization", autorizacion))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.error").value("Solicitud invalida"));
 	}
 
 	@Test
 	void archivoVacioResponde400() throws Exception {
+		Usuario usuario = crearUsuarioDePrueba();
+		String autorizacion = autorizacion(usuario);
+
 		MockMultipartFile archivo = new MockMultipartFile("archivo", "vacio.jpg", "image/jpeg", new byte[0]);
 
-		mockMvc.perform(multipart("/api/archivos").file(archivo))
+		mockMvc.perform(multipart("/api/archivos")
+				.file(archivo)
+				.header("Authorization", autorizacion))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.error").value("Solicitud invalida"));
 	}
 
 	@Test
 	void reporteCreadoConClaveSubidaDevuelveUrlResuelta() throws Exception {
-		Long usuarioId = crearUsuarioDePrueba();
+		Usuario usuario = crearUsuarioDePrueba();
+		String autorizacion = autorizacion(usuario);
 
-		MockMultipartFile archivo = new MockMultipartFile("archivo", "foto.jpg", "image/jpeg", IMAGEN);
-		MvcResult subida = mockMvc.perform(multipart("/api/archivos").file(archivo))
-				.andExpect(status().isCreated())
-				.andReturn();
+		MvcResult subida = subirImagen(autorizacion);
 		String clave = JsonPath.read(subida.getResponse().getContentAsString(), "$.clave");
 
 		String solicitud = """
@@ -107,12 +132,12 @@ class ArchivoTest {
 				  "severidadIa": "BAJA",
 				  "latitud": 3.4516,
 				  "longitud": -76.5320,
-				  "claveImagenHd": "%s",
-				  "usuarioId": %d
+				  "claveImagenHd": "%s"
 				}
-				""".formatted(clave, usuarioId);
+				""".formatted(clave);
 
 		MvcResult creacion = mockMvc.perform(post("/api/reportes")
+				.header("Authorization", autorizacion)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(solicitud))
 				.andExpect(status().isCreated())

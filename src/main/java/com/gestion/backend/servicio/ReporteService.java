@@ -11,6 +11,7 @@ import com.gestion.backend.error.RecursoNoEncontradoException;
 import com.gestion.backend.geoespacial.ServicioGeoespacial;
 import com.gestion.backend.ia.ClasificadorIncidencias;
 import com.gestion.backend.ia.ResultadoClasificacion;
+import com.gestion.backend.modelo.EstadoReporte;
 import com.gestion.backend.modelo.Reporte;
 import com.gestion.backend.modelo.Severidad;
 import com.gestion.backend.modelo.TipoIncidencia;
@@ -18,9 +19,9 @@ import com.gestion.backend.modelo.Usuario;
 import com.gestion.backend.repositorio.BarrioRepository;
 import com.gestion.backend.repositorio.EntidadRepository;
 import com.gestion.backend.repositorio.ReporteRepository;
-import com.gestion.backend.repositorio.UsuarioRepository;
 import com.gestion.backend.semantica.AnalisisSemantico;
 import com.gestion.backend.semantica.ServicioSemantico;
+import com.gestion.backend.seguridad.ServicioUsuarioActual;
 
 @Service
 public class ReporteService {
@@ -28,33 +29,31 @@ public class ReporteService {
 	private static final double RADIO_DEDUPLICACION_METROS = 5.0;
 
 	private final ReporteRepository reporteRepository;
-	private final UsuarioRepository usuarioRepository;
 	private final EntidadRepository entidadRepository;
 	private final BarrioRepository barrioRepository;
 	private final ServicioGeoespacial servicioGeoespacial;
 	private final ClasificadorIncidencias clasificadorIncidencias;
 	private final ServicioSemantico servicioSemantico;
 	private final AlmacenamientoArchivos almacenamientoArchivos;
+	private final ServicioUsuarioActual servicioUsuarioActual;
 
-	public ReporteService(ReporteRepository reporteRepository, UsuarioRepository usuarioRepository,
-			EntidadRepository entidadRepository, BarrioRepository barrioRepository,
-			ServicioGeoespacial servicioGeoespacial, ClasificadorIncidencias clasificadorIncidencias,
-			ServicioSemantico servicioSemantico, AlmacenamientoArchivos almacenamientoArchivos) {
+	public ReporteService(ReporteRepository reporteRepository, EntidadRepository entidadRepository,
+			BarrioRepository barrioRepository, ServicioGeoespacial servicioGeoespacial,
+			ClasificadorIncidencias clasificadorIncidencias, ServicioSemantico servicioSemantico,
+			AlmacenamientoArchivos almacenamientoArchivos, ServicioUsuarioActual servicioUsuarioActual) {
 		this.reporteRepository = reporteRepository;
-		this.usuarioRepository = usuarioRepository;
 		this.entidadRepository = entidadRepository;
 		this.barrioRepository = barrioRepository;
 		this.servicioGeoespacial = servicioGeoespacial;
 		this.clasificadorIncidencias = clasificadorIncidencias;
 		this.servicioSemantico = servicioSemantico;
 		this.almacenamientoArchivos = almacenamientoArchivos;
+		this.servicioUsuarioActual = servicioUsuarioActual;
 	}
 
 	@Transactional
 	public ReporteResponse crear(ReporteCreacionRequest solicitud) {
-		Usuario usuario = usuarioRepository.findById(solicitud.usuarioId())
-				.orElseThrow(() -> new RecursoNoEncontradoException(
-						"Usuario no encontrado con id " + solicitud.usuarioId()));
+		Usuario usuario = servicioUsuarioActual.actual();
 
 		ResultadoClasificacion clasificacion = null;
 		if (solicitud.categoriaIa() == null || solicitud.severidadIa() == null || solicitud.descripcion() == null) {
@@ -102,6 +101,15 @@ public class ReporteService {
 		Reporte reporte = reporteRepository.findById(id)
 				.orElseThrow(() -> new RecursoNoEncontradoException("Reporte no encontrado con id " + id));
 		return aRespuesta(reporte);
+	}
+
+	@Transactional
+	public ReporteResponse cambiarEstado(Long id, EstadoReporte nuevoEstado) {
+		Reporte reporte = reporteRepository.findById(id)
+				.orElseThrow(() -> new RecursoNoEncontradoException("Reporte no encontrado con id " + id));
+		reporte.setEstado(nuevoEstado);
+		Reporte guardado = reporteRepository.saveAndFlush(reporte);
+		return aRespuesta(guardado);
 	}
 
 	private ReporteResponse aRespuesta(Reporte reporte) {
