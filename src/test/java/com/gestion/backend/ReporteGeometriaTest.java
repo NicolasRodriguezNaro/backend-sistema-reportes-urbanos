@@ -2,6 +2,7 @@ package com.gestion.backend;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
@@ -70,7 +71,7 @@ class ReporteGeometriaTest {
 
 		Reporte recuperado = reporteRepository.findById(guardado.getId()).orElseThrow();
 
-		assertThat(recuperado.getUbicacion()).isNotNull();
+		assertNotNull(recuperado.getUbicacion());
 		assertThat(recuperado.getUbicacion().getSRID()).isEqualTo(9377);
 		assertThat(recuperado.getUbicacion().getX()).isCloseTo(ubicacion.getX(), within(0.000001));
 		assertThat(recuperado.getUbicacion().getY()).isCloseTo(ubicacion.getY(), within(0.000001));

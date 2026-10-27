@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import com.gestion.backend.error.CredencialesInvalidasException;
-
 @RestControllerAdvice
 public class ManejadorGlobalErrores {
 
@@ -48,7 +46,7 @@ public class ManejadorGlobalErrores {
 		Map<String, Object> cuerpo = Map.of(
 				"error", "Archivo demasiado grande",
 				"mensaje", "La imagen supera el tamano maximo permitido (10 MB)");
-		return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(cuerpo);
+		return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(cuerpo);
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
