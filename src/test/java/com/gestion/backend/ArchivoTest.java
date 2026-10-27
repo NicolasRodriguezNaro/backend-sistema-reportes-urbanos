@@ -8,8 +8,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +42,6 @@ import com.jayway.jsonpath.JsonPath;
 @Transactional
 class ArchivoTest {
 
-	private static final byte[] IMAGEN = new byte[] {
-			(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F' };
-
 	@Autowired
 	private MockMvc mockMvc;
 
@@ -59,8 +64,24 @@ class ArchivoTest {
 		return "Bearer " + servicioTokens.generar(usuario).token();
 	}
 
-	private MvcResult subirImagen(String autorizacion) throws Exception {
-		MockMultipartFile archivo = new MockMultipartFile("archivo", "foto.jpg", "image/jpeg", IMAGEN);
+	private byte[] imagenDePrueba() throws IOException {
+		BufferedImage imagen = new BufferedImage(640, 480, BufferedImage.TYPE_INT_RGB);
+		Graphics2D grafico = imagen.createGraphics();
+		try {
+			grafico.setColor(new Color(30, 120, 200));
+			grafico.fillRect(0, 0, 640, 480);
+			grafico.setColor(Color.WHITE);
+			grafico.fillOval(160, 120, 320, 240);
+		} finally {
+			grafico.dispose();
+		}
+		ByteArrayOutputStream salida = new ByteArrayOutputStream();
+		ImageIO.write(imagen, "jpg", salida);
+		return salida.toByteArray();
+	}
+
+	private MvcResult subirImagen(String autorizacion, byte[] imagen) throws Exception {
+		MockMultipartFile archivo = new MockMultipartFile("archivo", "foto.jpg", "image/jpeg", imagen);
 		return mockMvc.perform(multipart("/api/archivos")
 				.file(archivo)
 				.header("Authorization", autorizacion))
@@ -69,24 +90,41 @@ class ArchivoTest {
 	}
 
 	@Test
-	void subirImagenDevuelveClaveYUrlAccesible() throws Exception {
+	void subirImagenDevuelveClaveYUrlAccesibleConMiniatura() throws Exception {
 		Usuario usuario = crearUsuarioDePrueba();
 		String autorizacion = autorizacion(usuario);
+		byte[] imagen = imagenDePrueba();
 
-		MvcResult subida = subirImagen(autorizacion);
+		MvcResult subida = subirImagen(autorizacion, imagen);
 
 		String cuerpo = subida.getResponse().getContentAsString();
 		String clave = JsonPath.read(cuerpo, "$.clave");
 		String url = JsonPath.read(cuerpo, "$.url");
+		String claveThumb = JsonPath.read(cuerpo, "$.claveThumb");
+		String urlThumb = JsonPath.read(cuerpo, "$.urlThumb");
 
 		assertThat(clave).startsWith("incidentes/").endsWith(".jpg");
 		assertThat(url).contains(clave);
+		assertThat(claveThumb).startsWith("incidentes/").endsWith("thumb.jpg");
+		assertThat(urlThumb).contains(claveThumb);
 
 		mockMvc.perform(get(URI.create(url).getPath())
 				.header("Authorization", autorizacion))
 				.andExpect(status().isOk())
 				.andExpect(content().contentType(MediaType.IMAGE_JPEG))
-				.andExpect(content().bytes(IMAGEN));
+				.andExpect(content().bytes(imagen));
+
+		MvcResult descargaMiniatura = mockMvc.perform(get(URI.create(urlThumb).getPath())
+				.header("Authorization", autorizacion))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.IMAGE_JPEG))
+				.andReturn();
+
+		BufferedImage miniatura = ImageIO.read(
+				new ByteArrayInputStream(descargaMiniatura.getResponse().getContentAsByteArray()));
+		assertThat(miniatura).isNotNull();
+		assertThat(miniatura.getWidth()).isEqualTo(320);
+		assertThat(miniatura.getHeight()).isEqualTo(240);
 	}
 
 	@Test
@@ -119,12 +157,14 @@ class ArchivoTest {
 	}
 
 	@Test
-	void reporteCreadoConClaveSubidaDevuelveUrlResuelta() throws Exception {
+	void reporteCreadoConClavesSubidasDevuelveUrlsResueltas() throws Exception {
 		Usuario usuario = crearUsuarioDePrueba();
 		String autorizacion = autorizacion(usuario);
 
-		MvcResult subida = subirImagen(autorizacion);
-		String clave = JsonPath.read(subida.getResponse().getContentAsString(), "$.clave");
+		MvcResult subida = subirImagen(autorizacion, imagenDePrueba());
+		String cuerpoSubida = subida.getResponse().getContentAsString();
+		String clave = JsonPath.read(cuerpoSubida, "$.clave");
+		String claveThumb = JsonPath.read(cuerpoSubida, "$.claveThumb");
 
 		String solicitud = """
 				{
@@ -132,9 +172,10 @@ class ArchivoTest {
 				  "severidadIa": "BAJA",
 				  "latitud": 3.4516,
 				  "longitud": -76.5320,
-				  "claveImagenHd": "%s"
+				  "claveImagenHd": "%s",
+				  "claveImagenThumb": "%s"
 				}
-				""".formatted(clave);
+				""".formatted(clave, claveThumb);
 
 		MvcResult creacion = mockMvc.perform(post("/api/reportes")
 				.header("Authorization", autorizacion)
@@ -146,5 +187,7 @@ class ArchivoTest {
 		String cuerpo = creacion.getResponse().getContentAsString();
 		assertThat((String) JsonPath.read(cuerpo, "$.claveImagenHd")).isEqualTo(clave);
 		assertThat((String) JsonPath.read(cuerpo, "$.urlImagenHd")).contains(clave);
+		assertThat((String) JsonPath.read(cuerpo, "$.claveImagenThumb")).isEqualTo(claveThumb);
+		assertThat((String) JsonPath.read(cuerpo, "$.urlImagenThumb")).contains(claveThumb);
 	}
 }

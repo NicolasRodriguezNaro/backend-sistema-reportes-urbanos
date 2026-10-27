@@ -30,5 +30,8 @@ public record ReporteCreacionRequest(
 
 		@NotBlank(message = "La clave de la imagen HD es obligatoria")
 		@Size(max = 500, message = "La clave de la imagen HD no puede superar 500 caracteres")
-		String claveImagenHd) {
+		String claveImagenHd,
+
+		@Size(max = 500, message = "La clave de la miniatura no puede superar 500 caracteres")
+		String claveImagenThumb) {
 }

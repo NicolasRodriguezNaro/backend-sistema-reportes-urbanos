@@ -64,7 +64,9 @@ Respuesta `201 Created`:
 ```json
 {
   "clave": "incidentes/2026/10/24/1e841516-d57b-4db3-bb2c-856d2d633fbd/hd.jpg",
-  "url": "http://localhost:9000/reportes/incidentes/.../hd.jpg?X-Amz-Signature=..."
+  "url": "http://localhost:9000/reportes/incidentes/.../hd.jpg?X-Amz-Signature=...",
+  "claveThumb": "incidentes/2026/10/24/1e841516-d57b-4db3-bb2c-856d2d633fbd/thumb.jpg",
+  "urlThumb": "http://localhost:9000/reportes/incidentes/.../thumb.jpg?X-Amz-Signature=..."
 }
 ```
 
@@ -80,6 +82,17 @@ GET /api/archivos/{clave}
 
 Con S3, los clientes usan directamente la URL firmada devuelta por la API.
 
+### Miniaturas
+
+Al subir una imagen se genera una **miniatura de 320 px de ancho** (altura proporcional, JPEG,
+fondo blanco si hay transparencia) y se guarda como `thumb.jpg` en la misma carpeta de la HD.
+Se usa `ImageIO` del JDK, sin dependencias adicionales.
+
+- Si la imagen no se puede decodificar (por ejemplo WEBP, que `ImageIO` no soporta sin plugin),
+  la HD se guarda igualmente y `claveThumb`/`urlThumb` quedan `null`.
+- Las imágenes menores a 320 px se guardan sin ampliar.
+- Ambas URLs se resuelven como URLs firmadas en el adaptador S3.
+
 ### Crear un reporte con la clave
 
 ```http
@@ -90,12 +103,13 @@ POST /api/reportes
   "latitud": 1.619537,
   "longitud": -75.611134,
   "claveImagenHd": "incidentes/2026/10/24/<uuid>/hd.jpg",
+  "claveImagenThumb": "incidentes/2026/10/24/<uuid>/thumb.jpg",
   "usuarioId": 5
 }
 ```
 
-La respuesta incluye `claveImagenHd`, `urlImagenHd` (resuelta) y `urlImagenThumb` (null hasta
-la fase de miniaturas).
+La respuesta incluye `claveImagenHd`, `urlImagenHd` (resuelta), `claveImagenThumb` y
+`urlImagenThumb` (resuelta).
 
 > Nota: el campo antes se llamaba `urlImagenHd`. Ahora el contrato usa `claveImagenHd`.
 > Los registros históricos que contienen una URL completa (`http...`) se devuelven tal cual.
@@ -177,7 +191,8 @@ curl -X POST http://localhost:8080/api/archivos -F "archivo=@C:\ruta\foto.jpg"
 - **Bucket privado + URLs firmadas**: no hay acceso anónimo; la URL expira (15 min).
   El dashboard debe pedir el reporte de nuevo para obtener una URL fresca (o usar la clave).
 - **La BD guarda la clave**, no la URL: permite cambiar de servidor S3 sin migrar datos.
-- **Miniaturas**: pendientes (fase C3) con `Thumbnailator`; requieren imágenes reales en tests.
+- **Miniaturas**: generadas al subir (320 px, JPEG) con `ImageIO`; si el formato no es
+  decodificable se conserva la HD y la miniatura queda null.
 - **Validación de contenido**: hoy se valida MIME declarado y tamaño; una validación por
   *magic bytes* queda como mejora.
 - **Cliente móvil en otro dispositivo**: `localhost` no resuelve; configura el endpoint con la

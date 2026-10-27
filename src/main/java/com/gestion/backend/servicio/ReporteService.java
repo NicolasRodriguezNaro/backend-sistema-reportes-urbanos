@@ -84,6 +84,7 @@ public class ReporteService {
 			reporte.setConfianzaIa(clasificacion.confianza());
 		}
 		reporte.setUrlImagenHd(solicitud.claveImagenHd());
+		reporte.setUrlImagenThumb(solicitud.claveImagenThumb());
 
 		Reporte guardado = reporteRepository.save(reporte);
 
@@ -115,6 +116,7 @@ public class ReporteService {
 	private ReporteResponse aRespuesta(Reporte reporte) {
 		ServicioGeoespacial.CoordenadasGps gps = servicioGeoespacial.a4326(reporte.getUbicacion());
 		String claveImagenHd = reporte.getUrlImagenHd();
+		String claveImagenThumb = reporte.getUrlImagenThumb();
 
 		return new ReporteResponse(
 				reporte.getId(),
@@ -128,7 +130,8 @@ public class ReporteService {
 				gps.longitud(),
 				claveImagenHd,
 				resolverUrl(claveImagenHd),
-				resolverUrl(reporte.getUrlImagenThumb()),
+				claveImagenThumb,
+				resolverUrl(claveImagenThumb),
 				reporte.getFechaCreacion(),
 				reporte.getFechaActualizacion(),
 				reporte.getUsuario().getId(),

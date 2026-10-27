@@ -31,6 +31,8 @@ public record ReporteResponse(
 
 		String urlImagenHd,
 
+		String claveImagenThumb,
+
 		String urlImagenThumb,
 
 		Instant fechaCreacion,
