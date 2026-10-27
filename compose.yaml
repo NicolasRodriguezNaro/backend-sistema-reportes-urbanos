@@ -1,0 +1,36 @@
+services:
+  silo:
+    image: pgsty/silo:latest
+    container_name: gestion-s3
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - silo-data:/data
+    restart: unless-stopped
+
+  s3-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      - silo
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
+    entrypoint: >
+      /bin/sh -c "
+      until aws --endpoint-url http://silo:9000 s3api list-buckets >/dev/null 2>&1; do
+        echo 'Esperando almacenamiento S3...';
+        sleep 2;
+      done;
+      aws --endpoint-url http://silo:9000 s3api create-bucket --bucket reportes >/dev/null 2>&1 || true;
+      echo 'Bucket reportes listo (privado)';
+      "
+
+volumes:
+  silo-data:

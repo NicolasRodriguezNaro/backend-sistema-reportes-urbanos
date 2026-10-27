@@ -2,6 +2,13 @@
 spring.datasource.url=jdbc:postgresql://localhost:5432/gestion_db
 spring.datasource.username=postgres
 spring.datasource.password=CAMBIAME
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
+
+gestion.almacenamiento.minio.endpoint=http://localhost:9000
+gestion.almacenamiento.minio.bucket=reportes
+gestion.almacenamiento.minio.region=us-east-1
+gestion.almacenamiento.minio.access-key=${MINIO_ROOT_USER:minioadmin}
+gestion.almacenamiento.minio.secret-key=${MINIO_ROOT_PASSWORD:minioadmin}
+gestion.almacenamiento.minio.expiracion-url-minutos=15

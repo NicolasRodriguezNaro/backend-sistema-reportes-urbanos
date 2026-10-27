@@ -33,6 +33,7 @@ build/
 .vscode/
 
 application-dev.properties
+.env
 
 data/
 uploads/

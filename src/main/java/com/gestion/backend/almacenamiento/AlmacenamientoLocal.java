@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import com.gestion.backend.error.RecursoNoEncontradoException;
 
 @Service
-@Profile("dev")
+@Profile("dev & !minio")
 public class AlmacenamientoLocal implements AlmacenamientoArchivos {
 
 	private static final Map<String, String> TIPOS_POR_EXTENSION = Map.of(
