@@ -20,8 +20,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gestion.backend.modelo.Entidad;
+import com.gestion.backend.modelo.Reporte;
 import com.gestion.backend.modelo.RolUsuario;
 import com.gestion.backend.modelo.Usuario;
+import com.gestion.backend.repositorio.EntidadRepository;
+import com.gestion.backend.repositorio.ReporteRepository;
 import com.gestion.backend.repositorio.UsuarioRepository;
 import com.gestion.backend.seguridad.ServicioTokens;
 import com.jayway.jsonpath.JsonPath;
@@ -40,6 +44,12 @@ class SeguridadTest {
 
 	@Autowired
 	private UsuarioRepository usuarioRepository;
+
+	@Autowired
+	private EntidadRepository entidadRepository;
+
+	@Autowired
+	private ReporteRepository reporteRepository;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -167,11 +177,17 @@ class SeguridadTest {
 		MvcResult creacion = crearReporte(autorizacionCiudadano);
 		Number id = JsonPath.read(creacion.getResponse().getContentAsString(), "$.id");
 
+		Entidad entidad = entidadRepository.findAll().get(0);
+		Reporte reporte = reporteRepository.findById(id.longValue()).orElseThrow();
+		reporte.setEntidadAsignada(entidad);
+		reporteRepository.saveAndFlush(reporte);
+
 		Usuario funcionario = new Usuario();
 		funcionario.setNombre("Funcionario Prueba");
 		funcionario.setEmail(emailUnico());
 		funcionario.setPasswordHash(passwordEncoder.encode(PASSWORD));
 		funcionario.setRol(RolUsuario.FUNCIONARIO);
+		funcionario.setEntidad(entidad);
 		funcionario.setFechaRegistro(Instant.now());
 		funcionario = usuarioRepository.save(funcionario);
 		String autorizacionFuncionario = "Bearer " + servicioTokens.generar(funcionario).token();

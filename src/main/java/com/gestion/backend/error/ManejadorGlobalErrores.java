@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -63,5 +64,16 @@ public class ManejadorGlobalErrores {
 				"error", "No autenticado",
 				"mensaje", "Email o contrasena incorrectos");
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(cuerpo);
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<Map<String, Object>> manejarAccesoDenegado(AccessDeniedException excepcion) {
+		String mensaje = excepcion.getMessage() != null
+				? excepcion.getMessage()
+				: "No tiene permisos para realizar esta operacion";
+		Map<String, Object> cuerpo = Map.of(
+				"error", "Acceso denegado",
+				"mensaje", mensaje);
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(cuerpo);
 	}
 }
