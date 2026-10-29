@@ -2,7 +2,7 @@
 
 **Proyecto:** Plataforma Inteligente de Gestión de Incidencias Urbanas
 **Productos:** dashboard web + app móvil para ciudadanos
-**Estado:** guía de diseño e implementación
+**Estado:** guía de diseño + implementación inicial web y móvil
 **Última actualización:** octubre de 2026
 **Documentos relacionados:**
 
@@ -987,12 +987,75 @@ src/
 
 ---
 
-## 15. Próximos pasos
+## 15. Implementación actual
 
-1. Aprobar este brief.
-2. Generar las pantallas web en Stitch, una por una.
-3. Generar las pantallas móviles, una por una.
-4. Extraer el sistema visual definitivo.
-5. Crear `gestion-frontend` con React + Vite + TypeScript.
-6. Implementar la Fase 1 del frontend.
-7. Validar con los usuarios de prueba del backend.
+La base de ambos frontends ya fue creada en el workspace:
+
+```text
+gestion-frontend/    React + Vite + TypeScript
+gestion-mobile/      Expo + React Native + Expo Router + TypeScript
+```
+
+### Web
+
+Implementado:
+
+- Login institucional.
+- Layout responsive con sidebar.
+- Dashboard con métricas, dona por estado, barras por categoría/prioridad, barrios y mapa.
+- Listado con filtros, paginación y tabla responsive.
+- Detalle con evidencia, ubicación, ficha y acciones por rol.
+- Mapa territorial con capas de reportes, barrios y sitios.
+- Catálogo de entidades.
+- Perfil y cierre de sesión.
+- Cliente HTTP real contra `/api/**`.
+
+Comandos de verificación:
+
+```bash
+cd gestion-frontend
+npm run build
+```
+
+### Móvil
+
+Implementado:
+
+- Expo Router con rutas en `src/app/`.
+- Login y registro de ciudadanos.
+- Inicio con reportes reales.
+- Flujo de reporte en tres pasos: foto, ubicación y revisión.
+- Subida de imagen y creación del reporte.
+- “Mis reportes”.
+- Detalle del reporte.
+- Perfil y cierre de sesión.
+- Icono y splash de marca.
+
+Comandos de verificación:
+
+```bash
+cd gestion-mobile
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+```
+
+### Decisiones aplicadas
+
+- Se eliminó el contenido ficticio de Stitch: CDMX, cuadrillas, SMS, notificaciones push y métricas inventadas.
+- La app móvil se reconstruyó como aplicación nativa, no adaptando HTML.
+- El dashboard web usa datos reales de la API.
+- La estética comparte azul petróleo, menta, tipografía Plus Jakarta Sans y el mismo lenguaje de estados.
+- Los exports de Stitch quedan como referencia visual, no como código de producción.
+
+---
+
+## 16. Próximos pasos
+
+1. Validar visualmente las pantallas con el equipo.
+2. Revisar el flujo de reporte en un dispositivo físico con Expo Go.
+3. Añadir más estados vacíos y de error en el dashboard.
+4. Implementar pruebas end-to-end del flujo ciudadano.
+5. Incorporar la app móvil al repositorio y flujo de CI.
+6. Ajustar iconografía y fotografías de ejemplo.
+7. Completar la documentación de despliegue.
