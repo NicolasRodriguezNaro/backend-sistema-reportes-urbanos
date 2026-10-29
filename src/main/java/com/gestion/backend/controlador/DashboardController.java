@@ -27,7 +27,8 @@ public class DashboardController {
 	public DashboardResumenResponse resumen(
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-			@RequestParam(required = false) Integer barrioId) {
-		return dashboardService.resumen(desde, hasta, barrioId);
+			@RequestParam(required = false) Integer barrioId,
+			@RequestParam(required = false) Integer entidadId) {
+		return dashboardService.resumen(desde, hasta, barrioId, entidadId);
 	}
 }

@@ -1,6 +1,7 @@
 package com.gestion.backend;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +27,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gestion.backend.geoespacial.ServicioGeoespacial;
+import com.gestion.backend.modelo.Barrio;
 import com.gestion.backend.modelo.Entidad;
 import com.gestion.backend.modelo.EstadoReporte;
 import com.gestion.backend.modelo.PrioridadCalculada;
@@ -33,6 +36,7 @@ import com.gestion.backend.modelo.RolUsuario;
 import com.gestion.backend.modelo.Severidad;
 import com.gestion.backend.modelo.TipoIncidencia;
 import com.gestion.backend.modelo.Usuario;
+import com.gestion.backend.repositorio.BarrioRepository;
 import com.gestion.backend.repositorio.EntidadRepository;
 import com.gestion.backend.repositorio.ReporteRepository;
 import com.gestion.backend.repositorio.UsuarioRepository;
@@ -56,6 +60,9 @@ class DashboardApiTest {
 
 	@Autowired
 	private EntidadRepository entidadRepository;
+
+	@Autowired
+	private BarrioRepository barrioRepository;
 
 	@Autowired
 	private ReporteRepository reporteRepository;
@@ -83,9 +90,15 @@ class DashboardApiTest {
 
 	private Reporte crearReporte(Usuario autor, Entidad entidad, TipoIncidencia categoria,
 			PrioridadCalculada prioridad) {
+		return crearReporte(autor, entidad, categoria, prioridad, null);
+	}
+
+	private Reporte crearReporte(Usuario autor, Entidad entidad, TipoIncidencia categoria,
+			PrioridadCalculada prioridad, Barrio barrio) {
 		Reporte reporte = new Reporte();
 		reporte.setUsuario(autor);
 		reporte.setEntidadAsignada(entidad);
+		reporte.setBarrio(barrio);
 		reporte.setUbicacion(servicioGeoespacial.a9377(0.0, -70.0));
 		reporte.setCategoriaIa(categoria);
 		reporte.setSeveridadIa(Severidad.MEDIA);
@@ -153,6 +166,137 @@ class DashboardApiTest {
 	}
 
 	@Test
+	void empresaSoloVeReportesDeSuEntidad() throws Exception {
+		List<Entidad> entidades = entidades();
+		Entidad entidadA = entidades.get(0);
+		Entidad entidadB = entidades.get(1);
+
+		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
+		crearReporte(ciudadano, entidadA, TipoIncidencia.HUECO_VIA, PrioridadCalculada.MEDIA);
+		crearReporte(ciudadano, entidadB, TipoIncidencia.FUGA_AGUA, PrioridadCalculada.ALTA);
+
+		Usuario empresa = crearUsuario(RolUsuario.EMPRESA, entidadA);
+
+		MvcResult resultado = mockMvc.perform(get("/api/reportes")
+				.param("size", "100")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(empresa)))
+				.andExpect(status().isOk())
+				.andReturn();
+
+		List<Number> entidadesEnResultado = JsonPath.read(resultado.getResponse().getContentAsString(),
+				"$.contenido[*].entidadAsignadaId");
+		assertThat(entidadesEnResultado).isNotEmpty();
+		assertThat(entidadesEnResultado)
+				.allMatch(entidadId -> entidadId.intValue() == entidadA.getId());
+	}
+
+	@Test
+	void funcionarioNoPuedeVerNiCambiarReporteDeOtraEntidad() throws Exception {
+		List<Entidad> entidades = entidades();
+		Entidad entidadA = entidades.get(0);
+		Entidad entidadB = entidades.get(1);
+
+		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
+		Reporte reporte = crearReporte(ciudadano, entidadA, TipoIncidencia.HUECO_VIA,
+				PrioridadCalculada.MEDIA);
+		Usuario funcionarioB = crearUsuario(RolUsuario.FUNCIONARIO, entidadB);
+
+		mockMvc.perform(get("/api/reportes/" + reporte.getId())
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(funcionarioB)))
+				.andExpect(status().isForbidden());
+
+		mockMvc.perform(patch("/api/reportes/" + reporte.getId() + "/estado")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(funcionarioB))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"estado\":\"EN_REVISION\"}"))
+				.andExpect(status().isForbidden());
+
+		Usuario funcionarioA = crearUsuario(RolUsuario.FUNCIONARIO, entidadA);
+
+		mockMvc.perform(get("/api/reportes/" + reporte.getId())
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(funcionarioA)))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(patch("/api/reportes/" + reporte.getId() + "/estado")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(funcionarioA))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"estado\":\"EN_REVISION\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.estado").value("EN_REVISION"));
+	}
+
+	@Test
+	void listadoAceptaFiltrosDeFechaBarrioTextoYPrioridad() throws Exception {
+		Entidad entidad = entidades().get(0);
+		Barrio barrio = barrioRepository.findAll().get(0);
+		Usuario admin = crearUsuario(RolUsuario.ADMINISTRADOR, null);
+		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
+
+		String descripcion = "filtro-" + UUID.randomUUID();
+		Reporte reporte = crearReporte(ciudadano, entidad, TipoIncidencia.FUGA_AGUA,
+				PrioridadCalculada.ALTA, barrio);
+		reporte.setDescripcion(descripcion);
+		reporteRepository.saveAndFlush(reporte);
+
+		String hoy = LocalDate.now().toString();
+		MvcResult resultado = mockMvc.perform(get("/api/reportes")
+				.param("texto", descripcion)
+				.param("categoria", "FUGA_AGUA")
+				.param("prioridad", "ALTA")
+				.param("barrioId", String.valueOf(barrio.getGid()))
+				.param("desde", hoy)
+				.param("hasta", hoy)
+				.param("size", "100")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(admin)))
+				.andExpect(status().isOk())
+				.andReturn();
+
+		String cuerpo = resultado.getResponse().getContentAsString();
+		assertThat(((Number) JsonPath.read(cuerpo, "$.total")).longValue()).isGreaterThanOrEqualTo(1);
+		List<String> categorias = JsonPath.read(cuerpo, "$.contenido[*].categoriaIa");
+		List<String> prioridades = JsonPath.read(cuerpo, "$.contenido[*].prioridadCalculada");
+		List<Number> barrios = JsonPath.read(cuerpo, "$.contenido[*].barrioId");
+		assertThat(categorias).allMatch("FUGA_AGUA"::equals);
+		assertThat(prioridades).allMatch("ALTA"::equals);
+		assertThat(barrios).allMatch(barrioId -> barrioId.intValue() == barrio.getGid());
+	}
+
+	@Test
+	void resumenIncluyeElBarrioDelReporte() throws Exception {
+		Entidad entidad = entidades().get(0);
+		Barrio barrio = barrioRepository.findAll().get(0);
+		Usuario admin = crearUsuario(RolUsuario.ADMINISTRADOR, null);
+		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
+		crearReporte(ciudadano, entidad, TipoIncidencia.HUECO_VIA, PrioridadCalculada.MEDIA, barrio);
+
+		MvcResult resultado = mockMvc.perform(get("/api/dashboard/resumen")
+				.param("barrioId", String.valueOf(barrio.getGid()))
+				.param("entidadId", String.valueOf(entidad.getId()))
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(admin)))
+				.andExpect(status().isOk())
+				.andReturn();
+
+		List<Map<String, Object>> porBarrio = JsonPath.read(resultado.getResponse().getContentAsString(),
+				"$.porBarrio");
+		assertThat(porBarrio)
+				.anyMatch(fila -> ((Number) fila.get("barrioId")).intValue() == barrio.getGid());
+	}
+
+	@Test
+	void asignacionConEntidadInexistenteResponde404() throws Exception {
+		Usuario admin = crearUsuario(RolUsuario.ADMINISTRADOR, null);
+		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
+		Reporte reporte = crearReporte(ciudadano, entidades().get(0), TipoIncidencia.HUECO_VIA,
+				PrioridadCalculada.MEDIA);
+
+		mockMvc.perform(patch("/api/reportes/" + reporte.getId() + "/asignacion")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(admin))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"entidadId\":999999}"))
+				.andExpect(status().isNotFound());
+	}
+
+	@Test
 	void administradorListaYFiltraReportes() throws Exception {
 		Usuario admin = crearUsuario(RolUsuario.ADMINISTRADOR, null);
 		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
@@ -177,7 +321,7 @@ class DashboardApiTest {
 	}
 
 	@Test
-	void administradorConsultaMiosSoloDeSusReportes() throws Exception {
+	void ciudadanoConsultaMiosSoloDeSusReportes() throws Exception {
 		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
 		Usuario otro = crearUsuario(RolUsuario.CIUDADANO, null);
 		Entidad entidad = entidades().get(0);
@@ -243,6 +387,9 @@ class DashboardApiTest {
 		assertThat(coordenadas.get(0).doubleValue()).isBetween(-180.0, 180.0);
 		assertThat(coordenadas.get(1).doubleValue()).isBetween(-90.0, 90.0);
 		assertThat((Object) JsonPath.read(cuerpo, "$.features[0].properties.id")).isNotNull();
+
+		String fechaCreacion = JsonPath.read(cuerpo, "$.features[0].properties.fechaCreacion");
+		assertThatCode(() -> Instant.parse(fechaCreacion)).doesNotThrowAnyException();
 	}
 
 	@Test
@@ -291,7 +438,8 @@ class DashboardApiTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"entidadId\":" + entidadB.getId() + "}"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.entidadAsignadaId").value(entidadB.getId()));
+				.andExpect(jsonPath("$.entidadAsignadaId").value(entidadB.getId()))
+				.andExpect(jsonPath("$.estado").value("PENDIENTE"));
 
 		mockMvc.perform(patch("/api/reportes/" + reporte.getId() + "/asignacion")
 				.header(HttpHeaders.AUTHORIZATION, autorizacion(funcionario))

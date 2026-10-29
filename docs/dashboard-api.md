@@ -121,8 +121,10 @@ Filtros opcionales:
 - `desde` (`YYYY-MM-DD`)
 - `hasta` (`YYYY-MM-DD`)
 - `barrioId`
+- `entidadId` (solo el administrador puede filtrar por una entidad concreta)
 
-El alcance por entidad se aplica automáticamente. El administrador ve toda la ciudad.
+El alcance por entidad se aplica automáticamente. El administrador ve toda la ciudad
+si no envía `entidadId`.
 
 Respuesta `200`:
 
@@ -295,17 +297,20 @@ Ambas rutas son públicas; el resto de `/api/**` exige token.
 `DashboardApiTest` cubre:
 
 - Ciudadano bloqueado en listado y resumen (`403`).
-- Funcionario limitado a su entidad, incluso si intenta filtrar por otra.
-- Listado paginado y filtro por categoría del administrador.
+- Funcionario y empresa limitados a su entidad, incluso si intentan filtrar por otra.
+- Funcionario bloqueado al ver o cambiar el estado de un reporte de otra entidad.
+- Listado paginado y filtros por categoría, prioridad, barrio, fechas y texto.
 - `/api/reportes/mios` solo devuelve reportes del token.
 - Coherencia de `total` con la suma de `porEstado`.
-- GeoJSON de reportes con coordenadas válidas.
+- `porBarrio` con datos reales.
+- GeoJSON de reportes con coordenadas válidas y `fechaCreacion` ISO-8601.
 - Catálogos GeoJSON y entidades.
-- Asignación por administrador; funcionario recibe `403`.
+- Asignación por administrador; funcionario recibe `403`; entidad inexistente `404`.
+- La asignación no cambia el estado (se mantiene la separación de acciones).
 - Preflight CORS para el origen del dashboard.
 - OpenAPI disponible sin token.
 
-Resultado de la suite: **36/36 pruebas en verde** con `./mvnw clean test`.
+Resultado de la suite: **41/41 pruebas en verde** con `./mvnw clean test`.
 
 ---
 

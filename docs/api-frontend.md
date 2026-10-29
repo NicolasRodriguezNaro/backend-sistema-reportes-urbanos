@@ -881,8 +881,10 @@ Filtros opcionales:
 | `desde` | `YYYY-MM-DD` | Inicio del rango, inclusive |
 | `hasta` | `YYYY-MM-DD` | Fin del rango, inclusive |
 | `barrioId` | entero | Limita a un barrio |
+| `entidadId` | entero | Solo el administrador puede filtrar por una entidad |
 
-El alcance por entidad se aplica automáticamente. El administrador ve toda la ciudad.
+El alcance por entidad se aplica automáticamente. El administrador ve toda la ciudad
+si no envía `entidadId`.
 
 Respuesta `200`:
 
@@ -992,8 +994,8 @@ Respuesta `200`, `Content-Type: application/geo+json`:
       "properties": {
         "gid": 124,
         "nombre": "Centro",
-        "codComuna": "01",
-        "codBarrio": "001"
+        "codComuna": 3,
+        "codBarrio": 133
       }
     }
   ]
@@ -1237,8 +1239,8 @@ export interface ReporteGeoProperties {
 export interface BarrioGeoProperties {
   gid: number;
   nombre: string;
-  codComuna: string;
-  codBarrio: string;
+  codComuna: number | null;
+  codBarrio: number | null;
 }
 
 export interface SitioGeoProperties {
@@ -1449,10 +1451,17 @@ export async function crearReporte(params: {
 import type { DashboardResumen } from "../types/api";
 import { apiFetch } from "./client";
 
-export function cargarResumen(desde?: string, hasta?: string) {
+export function cargarResumen(
+  desde?: string,
+  hasta?: string,
+  barrioId?: number,
+  entidadId?: number
+) {
   const params = new URLSearchParams();
   if (desde) params.set("desde", desde);
   if (hasta) params.set("hasta", hasta);
+  if (barrioId !== undefined) params.set("barrioId", String(barrioId));
+  if (entidadId !== undefined) params.set("entidadId", String(entidadId));
 
   return apiFetch<DashboardResumen>(
     `/api/dashboard/resumen?${params.toString()}`

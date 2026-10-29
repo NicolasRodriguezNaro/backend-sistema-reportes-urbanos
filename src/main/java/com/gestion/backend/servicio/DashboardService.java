@@ -39,11 +39,14 @@ public class DashboardService {
 	}
 
 	@Transactional(readOnly = true)
-	public DashboardResumenResponse resumen(LocalDate desde, LocalDate hasta, Integer barrioId) {
+	public DashboardResumenResponse resumen(LocalDate desde, LocalDate hasta, Integer barrioId,
+			Integer entidadId) {
 		Usuario usuario = alcanceReportes.usuarioActual();
-		Integer entidadId = alcanceReportes.entidadIdObligatoria(usuario);
+		Integer entidadFiltro = alcanceReportes.esAdministrador(usuario)
+				? entidadId
+				: alcanceReportes.entidadIdObligatoria(usuario);
 
-		FiltroSql filtro = filtroSql(entidadId, null, null, null, barrioId,
+		FiltroSql filtro = filtroSql(entidadFiltro, null, null, null, barrioId,
 				inicio(desde), finExclusivo(hasta), null);
 
 		long total = contar("SELECT count(*) FROM reportes" + filtro.where(), filtro.parametros());
@@ -89,7 +92,7 @@ public class DashboardService {
 			propiedades.put("categoria", datos[2]);
 			propiedades.put("prioridad", datos[3]);
 			propiedades.put("thumbUrl", resolvedorUrlArchivos.resolver((String) datos[4]));
-			propiedades.put("fechaCreacion", String.valueOf(datos[5]));
+			propiedades.put("fechaCreacion", fechaIso(datos[5]));
 			features.add(FeatureCollection.Feature.punto(
 					((Number) datos[6]).doubleValue(), ((Number) datos[7]).doubleValue(), propiedades));
 		}
@@ -175,6 +178,36 @@ public class DashboardService {
 		}
 
 		return new FiltroSql(where.toString(), parametros);
+	}
+
+	/**
+	 * Normaliza la fecha de una consulta nativa a ISO-8601. El driver de PostgreSQL
+	 * entrega esta columna como Timestamp si Hibernate no la convierte; usar
+	 * String.valueOf produciria un formato distinto al resto de la API.
+	 */
+	private String fechaIso(Object valor) {
+		if (valor == null) {
+			return null;
+		}
+		if (valor instanceof java.sql.Timestamp timestamp) {
+			return timestamp.toInstant().toString();
+		}
+		if (valor instanceof java.time.OffsetDateTime offsetDateTime) {
+			return offsetDateTime.toInstant().toString();
+		}
+		if (valor instanceof java.time.ZonedDateTime zonedDateTime) {
+			return zonedDateTime.toInstant().toString();
+		}
+		if (valor instanceof java.time.LocalDateTime localDateTime) {
+			return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toString();
+		}
+		if (valor instanceof java.time.Instant instant) {
+			return instant.toString();
+		}
+		if (valor instanceof java.util.Date fecha) {
+			return fecha.toInstant().toString();
+		}
+		return valor.toString();
 	}
 
 	private Instant inicio(LocalDate fecha) {
