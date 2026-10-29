@@ -1713,5 +1713,6 @@ Opciones:
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 - Documentación del dashboard: `docs/dashboard-api.md`
+- Guía de diseño e implementación del frontend: `docs/diseno-frontend.md`
 - Documentación de seguridad: `docs/seguridad.md`
 - Documentación de almacenamiento: `docs/almacenamiento.md`
