@@ -76,14 +76,14 @@ No diseñar estas funciones como si ya existieran. El backend actual no las expo
 |---|---|---|---|---|
 | `ADMINISTRADOR` | Sí | Opcional | Todos los reportes | Cambiar estado y asignar entidad |
 | `FUNCIONARIO` | Sí | No | Reportes de su entidad | Cambiar estado |
-| `EMPRESA` | Sí | No | Reportes de su entidad | Solo consulta |
+| `EMPRESA` | Sí | No | Reportes de su entidad | Cambiar estado |
 | `CIUDADANO` | No | Sí | Solo sus propios reportes | Crear reportes y consultar los suyos |
 
 Reglas visuales obligatorias:
 
 - El ciudadano no debe ver rutas del dashboard.
 - Un funcionario o empresa no debe ver reportes de otra entidad.
-- La empresa no debe ver acciones de cambio de estado.
+- La empresa puede cambiar el estado de los reportes de su entidad, pero no asignar entidades.
 - Solo el administrador debe ver la acción de asignar entidad.
 - El filtro por entidad solo debe mostrarse al administrador.
 - No mostrar acciones deshabilitadas sin explicación: si un rol no puede hacer algo, no mostrar el control.
@@ -356,7 +356,7 @@ Contenido:
 
 Acciones:
 
-- Cambiar estado: solo `FUNCIONARIO` y `ADMINISTRADOR`.
+- Cambiar estado: `FUNCIONARIO`, `EMPRESA` y `ADMINISTRADOR`.
 - Asignar entidad: solo `ADMINISTRADOR`.
 - Volver al listado.
 
@@ -961,7 +961,7 @@ src/
 - [ ] Ciudadano no puede acceder al dashboard.
 - [ ] Funcionario y empresa solo ven su entidad.
 - [ ] Solo administrador ve asignación.
-- [ ] Empresa no ve cambio de estado.
+- [ ] Empresa puede cambiar estado solo en reportes de su entidad.
 - [ ] Listado con filtros, paginación y estados vacíos.
 - [ ] Detalle con imagen, mapa y metadatos reales.
 - [ ] Dashboard con métricas coherentes.

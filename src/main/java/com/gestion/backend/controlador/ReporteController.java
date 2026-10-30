@@ -95,7 +95,7 @@ public class ReporteController {
 	}
 
 	@PatchMapping("/{id}/estado")
-	@PreAuthorize("hasAnyRole('FUNCIONARIO', 'ADMINISTRADOR')")
+	@PreAuthorize(ROLES_GESTION)
 	public ReporteResponse cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambioEstadoRequest solicitud) {
 		return reporteService.cambiarEstado(id, solicitud.estado());
 	}

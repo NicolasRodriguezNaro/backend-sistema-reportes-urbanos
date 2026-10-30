@@ -226,6 +226,34 @@ class DashboardApiTest {
 	}
 
 	@Test
+	void empresaPuedeCambiarEstadoSoloDeReportesDeSuEntidad() throws Exception {
+		List<Entidad> entidades = entidades();
+		Entidad entidadA = entidades.get(0);
+		Entidad entidadB = entidades.get(1);
+
+		Usuario ciudadano = crearUsuario(RolUsuario.CIUDADANO, null);
+		Reporte reporteA = crearReporte(ciudadano, entidadA, TipoIncidencia.FUGA_AGUA,
+				PrioridadCalculada.ALTA);
+		Reporte reporteB = crearReporte(ciudadano, entidadB, TipoIncidencia.HUECO_VIA,
+				PrioridadCalculada.MEDIA);
+		Usuario empresa = crearUsuario(RolUsuario.EMPRESA, entidadA);
+		String autorizacion = autorizacion(empresa);
+
+		mockMvc.perform(patch("/api/reportes/" + reporteA.getId() + "/estado")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"estado\":\"EN_REVISION\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.estado").value("EN_REVISION"));
+
+		mockMvc.perform(patch("/api/reportes/" + reporteB.getId() + "/estado")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"estado\":\"EN_REVISION\"}"))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
 	void listadoAceptaFiltrosDeFechaBarrioTextoYPrioridad() throws Exception {
 		Entidad entidad = entidades().get(0);
 		Barrio barrio = barrioRepository.findAll().get(0);

@@ -25,7 +25,7 @@ usa la misma API para mostrar “mis reportes”.
 |---|---|
 | `ADMINISTRADOR` | Ve y gestiona todos los reportes. Puede filtrar por cualquier entidad y reasignar. |
 | `FUNCIONARIO` | Solo ve reportes **asignados a su entidad**. Si no tiene entidad, recibe `403`. |
-| `EMPRESA` | Igual que funcionario: solo su entidad. |
+| `EMPRESA` | Igual que funcionario: solo su entidad y puede cambiar el estado de sus reportes. |
 | `CIUDADANO` | No usa el dashboard. Puede consultar sus propios reportes en `/api/reportes/mios` y el detalle de los suyos. |
 
 Reglas concretas:
@@ -35,8 +35,8 @@ Reglas concretas:
 - `GET /api/reportes/mios`: cualquier usuario autenticado; devuelve solo sus reportes.
 - `GET /api/reportes/{id}`: el dueño si es ciudadano; la entidad asignada si es
   funcionario/empresa; cualquier reporte si es administrador.
-- `PATCH /api/reportes/{id}/estado`: `FUNCIONARIO` o `ADMINISTRADOR`, respetando el
-  alcance por entidad.
+- `PATCH /api/reportes/{id}/estado`: `FUNCIONARIO`, `ADMINISTRADOR` o `EMPRESA`,
+  respetando el alcance por entidad.
 - `PATCH /api/reportes/{id}/asignacion`: solo `ADMINISTRADOR`.
 
 Los catálogos (`barrios`, `sitios-interes`, `entidades`) son de consulta para los roles
@@ -300,7 +300,8 @@ Ambas rutas son públicas; el resto de `/api/**` exige token.
 
 - Ciudadano bloqueado en listado y resumen (`403`).
 - Funcionario y empresa limitados a su entidad, incluso si intentan filtrar por otra.
-- Funcionario bloqueado al ver o cambiar el estado de un reporte de otra entidad.
+- Funcionario y empresa limitados al ver o cambiar el estado de reportes de otra entidad.
+- Empresa puede cambiar el estado de sus propios reportes.
 - Listado paginado y filtros por categoría, prioridad, barrio, fechas y texto.
 - `/api/reportes/mios` solo devuelve reportes del token.
 - Coherencia de `total` con la suma de `porEstado`.
@@ -314,7 +315,7 @@ Ambas rutas son públicas; el resto de `/api/**` exige token.
 - Preflight CORS para el origen del dashboard.
 - OpenAPI disponible sin token.
 
-Resultado de la suite: **42/42 pruebas en verde** con `./mvnw clean test`.
+Resultado de la suite: **43/43 pruebas en verde** con `./mvnw clean test`.
 
 ---
 

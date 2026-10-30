@@ -25,7 +25,7 @@ Esta guía explica **qué endpoints puede consumir el frontend, qué recibe, qu�
 | `GET` | `/api/reportes` | Funcionario/Admin/Empresa | Listado paginado con filtros |
 | `GET` | `/api/reportes/mios` | Autenticado | Reportes del usuario actual |
 | `GET` | `/api/reportes/geojson` | Funcionario/Admin/Empresa | Puntos para el mapa |
-| `PATCH` | `/api/reportes/{id}/estado` | Funcionario/Admin | Cambiar el estado |
+| `PATCH` | `/api/reportes/{id}/estado` | Funcionario/Admin/Empresa | Cambiar el estado |
 | `PATCH` | `/api/reportes/{id}/asignacion` | Administrador | Reasignar la entidad responsable |
 | `GET` | `/api/dashboard/resumen` | Funcionario/Admin/Empresa | Métricas y tarjetas del dashboard |
 | `GET` | `/api/barrios/geojson` | Funcionario/Admin/Empresa | Capa GeoJSON de barrios |
@@ -45,7 +45,7 @@ Resumen de alcance:
 
 - **CIUDADANO:** app móvil. Crea reportes y consulta los suyos.
 - **FUNCIONARIO:** dashboard. Solo ve reportes asignados a su entidad.
-- **EMPRESA:** dashboard. Mismo alcance que funcionario.
+- **EMPRESA:** dashboard. Mismo alcance que funcionario y puede cambiar el estado de sus reportes.
 - **ADMINISTRADOR:** dashboard completo. Ve todo y puede reasignar.
 
 ---
@@ -771,7 +771,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-Roles: `FUNCIONARIO` o `ADMINISTRADOR`.
+Roles: `FUNCIONARIO`, `ADMINISTRADOR` o `EMPRESA`.
 
 Body:
 
@@ -795,7 +795,7 @@ Respuesta `200`: el reporte completo actualizado.
 
 Reglas:
 
-- Un funcionario solo puede cambiar el estado de un reporte de su entidad.
+- Un funcionario o una empresa solo pueden cambiar el estado de reportes de su entidad.
 - Un administrador puede cambiar cualquiera.
 - Un ciudadano recibe `403`.
 - No hay historial de estados en esta versión.
@@ -1621,7 +1621,7 @@ las métricas o el GeoJSON para reflejar el cambio.
 | Mis reportes | ✅ | ✅ | ✅ | ✅ |
 | Listado general | ❌ | ✅ | ✅ | ✅ |
 | Detalle de cualquier reporte | Solo propios | Solo su entidad | Solo su entidad | ✅ |
-| Cambiar estado | ❌ | ✅ | ❌ | ✅ |
+| Cambiar estado | ❌ | ✅ | ✅ | ✅ |
 | Asignar entidad | ❌ | ❌ | ❌ | ✅ |
 | Métricas | ❌ | ✅ | ✅ | ✅ |
 | Mapa | ❌ | ✅ | ✅ | ✅ |

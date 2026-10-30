@@ -44,7 +44,7 @@ suplantar a otro y subir archivos sin identificarse. Ahora:
 | `GET` | `/api/reportes/geojson` | `FUNCIONARIO` / `ADMINISTRADOR` / `EMPRESA` | Mapa de reportes |
 | `GET` | `/api/dashboard/resumen` | `FUNCIONARIO` / `ADMINISTRADOR` / `EMPRESA` | Métricas del dashboard |
 | `GET` | `/api/barrios/geojson`, `/api/sitios-interes/geojson`, `/api/entidades` | `FUNCIONARIO` / `ADMINISTRADOR` / `EMPRESA` | Catálogos del mapa |
-| `PATCH` | `/api/reportes/{id}/estado` | `FUNCIONARIO` / `ADMINISTRADOR` | Cambia el estado, respetando la entidad |
+| `PATCH` | `/api/reportes/{id}/estado` | `FUNCIONARIO` / `ADMINISTRADOR` / `EMPRESA` | Cambia el estado, respetando la entidad |
 | `PATCH` | `/api/reportes/{id}/asignacion` | `ADMINISTRADOR` | Reasigna la entidad responsable |
 | Resto de `/api/**` | — | Autenticado | Archivos, etc. |
 
@@ -87,8 +87,9 @@ Respuesta de token:
 - `GET /api/reportes`, el dashboard y los catálogos exigen `FUNCIONARIO`,
   `ADMINISTRADOR` o `EMPRESA` (`@PreAuthorize`).
 - Un `FUNCIONARIO` o `EMPRESA` sin `entidad_id` recibe `403`.
-- `PATCH /api/reportes/{id}/estado` exige `FUNCIONARIO` o `ADMINISTRADOR` y que el
-  reporte esté asignado a su entidad; el administrador puede cambiar cualquiera.
+- `PATCH /api/reportes/{id}/estado` exige `FUNCIONARIO`, `ADMINISTRADOR` o `EMPRESA`.
+  Funcionario y empresa solo pueden cambiar reportes asignados a su entidad; el
+  administrador puede cambiar cualquiera.
 - `PATCH /api/reportes/{id}/asignacion` exige `ADMINISTRADOR`.
 - **401** (sin token, token inválido o expirado):
   `{"error":"No autenticado","mensaje":"Debe enviar un token JWT valido en el header Authorization"}`
@@ -195,13 +196,14 @@ WHERE email = 'demo@test.local';
 
 ## 11. Verificación
 
-- **42/42 tests** en verde.
+- **43/43 tests** en verde.
 - `SeguridadTest` cubre: registro/login, contraseña incorrecta, 401 sin token, 401 con token
   inválido, `GET /api/auth/yo` (401 sin token / 200 con token), ciudadano bloqueado en
   `PATCH` (403), funcionario con entidad permitido (200) y que el reporte use el usuario
   del token.
 - `DashboardApiTest` cubre el alcance por entidad (funcionario y empresa), detalle y
-  cambio de estado entre entidades, filtros combinados, nombres de barrio/entidad,
+  cambio de estado entre entidades, empresa con control de estado de su entidad,
+  filtros combinados, nombres de barrio/entidad,
   catálogo de entidades por rol, métricas, GeoJSON con fechas ISO, asignación
   administrativa, CORS y OpenAPI.
 - Prueba manual verificada: registro → 401 sin token → subida autenticada → reporte con
