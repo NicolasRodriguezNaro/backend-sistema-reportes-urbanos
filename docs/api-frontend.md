@@ -303,7 +303,8 @@ Respuesta `201 Created`:
     "nombre": "Ana Pérez",
     "email": "ana@example.com",
     "rol": "CIUDADANO",
-    "entidadId": null
+    "entidadId": null,
+    "entidadNombre": null
   }
 }
 ```
@@ -346,7 +347,8 @@ Respuesta `200 OK`:
   "nombre": "Ana Pérez",
   "email": "ana@example.com",
   "rol": "CIUDADANO",
-  "entidadId": null
+  "entidadId": null,
+  "entidadNombre": null
 }
 ```
 
@@ -623,7 +625,9 @@ Respuesta `201 Created`:
   "fechaActualizacion": "2026-10-27T18:00:00Z",
   "usuarioId": 124,
   "barrioId": 124,
+  "barrioNombre": "Centro",
   "entidadAsignadaId": 2,
+  "entidadNombre": "Empresa de Acueducto y Alcantarillado",
   "reportePadreId": null
 }
 ```
@@ -711,7 +715,9 @@ Respuesta `200`:
       "claveImagenThumb": "incidentes/.../thumb.jpg",
       "urlImagenThumb": "http://localhost:9000/reportes/...?X-Amz-Signature=...",
       "barrioId": 124,
+      "barrioNombre": "Centro",
       "entidadAsignadaId": 2,
+      "entidadNombre": "Empresa de Acueducto y Alcantarillado",
       "usuarioId": 124,
       "reportePadreId": null,
       "fechaCreacion": "2026-10-27T18:00:00Z",
@@ -945,7 +951,12 @@ Authorization: Bearer <token>
 
 Roles: `FUNCIONARIO`, `ADMINISTRADOR` o `EMPRESA`.
 
-Respuesta `200`:
+Alcance:
+
+- `ADMINISTRADOR`: devuelve todo el catálogo.
+- `FUNCIONARIO` y `EMPRESA`: devuelven únicamente su entidad.
+
+Respuesta `200` (ejemplo para administrador):
 
 ```json
 [
@@ -968,7 +979,8 @@ Se usa para:
 
 - mostrar filtros por entidad al administrador;
 - mostrar el catálogo en el formulario de asignación;
-- mostrar el nombre de la entidad en la tabla.
+- mostrar el nombre de la entidad en la tabla;
+- mostrar el nombre de la entidad propia en el perfil.
 
 ### 8.2 Barrios
 
@@ -1097,6 +1109,7 @@ export interface UsuarioResumen {
   email: string;
   rol: RolUsuario;
   entidadId: number | null;
+  entidadNombre: string | null;
 }
 
 export interface TokenResponse {
@@ -1145,7 +1158,9 @@ export interface ReporteResponse {
   fechaActualizacion: string;
   usuarioId: number;
   barrioId: number | null;
+  barrioNombre: string | null;
   entidadAsignadaId: number | null;
+  entidadNombre: string | null;
   reportePadreId: number | null;
 }
 
@@ -1159,7 +1174,9 @@ export interface ReporteResumen {
   claveImagenThumb: string | null;
   urlImagenThumb: string | null;
   barrioId: number | null;
+  barrioNombre: string | null;
   entidadAsignadaId: number | null;
+  entidadNombre: string | null;
   usuarioId: number;
   reportePadreId: number | null;
   fechaCreacion: string;
@@ -1234,6 +1251,8 @@ export interface ReporteGeoProperties {
   prioridad: PrioridadCalculada | null;
   thumbUrl: string | null;
   fechaCreacion: string;
+  barrioNombre: string | null;
+  entidadNombre: string | null;
 }
 
 export interface BarrioGeoProperties {

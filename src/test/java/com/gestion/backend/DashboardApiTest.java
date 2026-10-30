@@ -256,9 +256,31 @@ class DashboardApiTest {
 		List<String> categorias = JsonPath.read(cuerpo, "$.contenido[*].categoriaIa");
 		List<String> prioridades = JsonPath.read(cuerpo, "$.contenido[*].prioridadCalculada");
 		List<Number> barrios = JsonPath.read(cuerpo, "$.contenido[*].barrioId");
+		List<String> barriosNombre = JsonPath.read(cuerpo, "$.contenido[*].barrioNombre");
+		List<String> entidadesNombre = JsonPath.read(cuerpo, "$.contenido[*].entidadNombre");
 		assertThat(categorias).allMatch("FUGA_AGUA"::equals);
 		assertThat(prioridades).allMatch("ALTA"::equals);
 		assertThat(barrios).allMatch(barrioId -> barrioId.intValue() == barrio.getGid());
+		assertThat(barriosNombre).allMatch(barrio.getNombre()::equals);
+		assertThat(entidadesNombre).allMatch(entidad.getNombre()::equals);
+	}
+
+	@Test
+	void funcionarioSoloVeSuEntidadEnElCatalogo() throws Exception {
+		List<Entidad> entidades = entidades();
+		Entidad entidadA = entidades.get(0);
+		Entidad entidadB = entidades.get(1);
+		Usuario funcionario = crearUsuario(RolUsuario.FUNCIONARIO, entidadA);
+
+		MvcResult resultado = mockMvc.perform(get("/api/entidades")
+				.header(HttpHeaders.AUTHORIZATION, autorizacion(funcionario)))
+				.andExpect(status().isOk())
+				.andReturn();
+
+		List<Number> ids = JsonPath.read(resultado.getResponse().getContentAsString(), "$[*].id");
+		assertThat(ids).hasSize(1);
+		assertThat(ids.get(0).intValue()).isEqualTo(entidadA.getId());
+		assertThat(ids.get(0).intValue()).isNotEqualTo(entidadB.getId());
 	}
 
 	@Test

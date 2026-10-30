@@ -43,7 +43,11 @@ public record ReporteResponse(
 
 		Integer barrioId,
 
+		String barrioNombre,
+
 		Integer entidadAsignadaId,
+
+		String entidadNombre,
 
 		Long reportePadreId) {
 }

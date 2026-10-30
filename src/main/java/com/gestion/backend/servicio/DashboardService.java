@@ -78,6 +78,8 @@ public class DashboardService {
 
 		Query consulta = entityManager.createNativeQuery(
 				"SELECT id, estado, categoria_ia, prioridad_calculada, url_imagen_thumb, fecha_creacion,"
+						+ " (SELECT b.nombre FROM barrios b WHERE b.gid = reportes.barrio_id),"
+						+ " (SELECT e.nombre FROM entidades e WHERE e.id = reportes.entidad_asignada_id),"
 						+ " ST_X(ST_Transform(ubicacion, 4326)), ST_Y(ST_Transform(ubicacion, 4326))"
 						+ " FROM reportes" + filtro.where()
 						+ " ORDER BY fecha_creacion DESC LIMIT 2000");
@@ -93,8 +95,10 @@ public class DashboardService {
 			propiedades.put("prioridad", datos[3]);
 			propiedades.put("thumbUrl", resolvedorUrlArchivos.resolver((String) datos[4]));
 			propiedades.put("fechaCreacion", fechaIso(datos[5]));
+			propiedades.put("barrioNombre", datos[6]);
+			propiedades.put("entidadNombre", datos[7]);
 			features.add(FeatureCollection.Feature.punto(
-					((Number) datos[6]).doubleValue(), ((Number) datos[7]).doubleValue(), propiedades));
+					((Number) datos[8]).doubleValue(), ((Number) datos[9]).doubleValue(), propiedades));
 		}
 		return FeatureCollection.de(features);
 	}

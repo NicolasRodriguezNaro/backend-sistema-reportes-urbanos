@@ -181,6 +181,10 @@ public class ReporteService {
 
 	private ReporteResumenResponse aResumen(Reporte reporte) {
 		String claveThumb = reporte.getUrlImagenThumb();
+		String barrioNombre = reporte.getBarrio() != null ? reporte.getBarrio().getNombre() : null;
+		String entidadNombre = reporte.getEntidadAsignada() != null
+				? reporte.getEntidadAsignada().getNombre()
+				: null;
 		return new ReporteResumenResponse(
 				reporte.getId(),
 				reporte.getEstado(),
@@ -191,7 +195,9 @@ public class ReporteService {
 				claveThumb,
 				resolvedorUrlArchivos.resolver(claveThumb),
 				reporte.getBarrio() != null ? reporte.getBarrio().getGid() : null,
+				barrioNombre,
 				reporte.getEntidadAsignada() != null ? reporte.getEntidadAsignada().getId() : null,
+				entidadNombre,
 				reporte.getUsuario().getId(),
 				reporte.getReportePadre() != null ? reporte.getReportePadre().getId() : null,
 				reporte.getFechaCreacion(),
@@ -221,7 +227,9 @@ public class ReporteService {
 				reporte.getFechaActualizacion(),
 				reporte.getUsuario().getId(),
 				reporte.getBarrio() != null ? reporte.getBarrio().getGid() : null,
+				reporte.getBarrio() != null ? reporte.getBarrio().getNombre() : null,
 				reporte.getEntidadAsignada() != null ? reporte.getEntidadAsignada().getId() : null,
+				reporte.getEntidadAsignada() != null ? reporte.getEntidadAsignada().getNombre() : null,
 				reporte.getReportePadre() != null ? reporte.getReportePadre().getId() : null);
 	}
 

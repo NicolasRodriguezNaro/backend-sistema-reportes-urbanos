@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.gestion.backend.dto.EntidadResumenResponse;
 import com.gestion.backend.repositorio.EntidadRepository;
+import com.gestion.backend.seguridad.AlcanceReportes;
 
 import jakarta.persistence.EntityManager;
 
@@ -16,10 +17,13 @@ public class CatalogoService {
 
 	private final EntityManager entityManager;
 	private final EntidadRepository entidadRepository;
+	private final AlcanceReportes alcanceReportes;
 
-	public CatalogoService(EntityManager entityManager, EntidadRepository entidadRepository) {
+	public CatalogoService(EntityManager entityManager, EntidadRepository entidadRepository,
+			AlcanceReportes alcanceReportes) {
 		this.entityManager = entityManager;
 		this.entidadRepository = entidadRepository;
+		this.alcanceReportes = alcanceReportes;
 	}
 
 	@Transactional(readOnly = true)
@@ -65,9 +69,22 @@ public class CatalogoService {
 
 	@Transactional(readOnly = true)
 	public List<EntidadResumenResponse> entidades() {
-		return entidadRepository.findAll(Sort.by("id")).stream()
-				.map(entidad -> new EntidadResumenResponse(entidad.getId(), entidad.getNombre(),
-						entidad.getTipo(), entidad.getContactoEmail()))
+		var usuario = alcanceReportes.usuarioActual();
+
+		if (alcanceReportes.esAdministrador(usuario)) {
+			return entidadRepository.findAll(Sort.by("id")).stream()
+					.map(this::aResumen)
+					.toList();
+		}
+
+		Integer entidadId = alcanceReportes.entidadIdObligatoria(usuario);
+		return entidadRepository.findById(entidadId).stream()
+				.map(this::aResumen)
 				.toList();
+	}
+
+	private EntidadResumenResponse aResumen(com.gestion.backend.modelo.Entidad entidad) {
+		return new EntidadResumenResponse(entidad.getId(), entidad.getNombre(),
+				entidad.getTipo(), entidad.getContactoEmail());
 	}
 }

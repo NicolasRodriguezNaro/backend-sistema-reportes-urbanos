@@ -60,7 +60,8 @@ Respuesta de token:
     "nombre": "Demo Seguridad",
     "email": "demo@test.local",
     "rol": "CIUDADANO",
-    "entidadId": null
+    "entidadId": null,
+    "entidadNombre": null
   }
 }
 ```
@@ -194,14 +195,15 @@ WHERE email = 'demo@test.local';
 
 ## 11. Verificación
 
-- **41/41 tests** en verde.
+- **42/42 tests** en verde.
 - `SeguridadTest` cubre: registro/login, contraseña incorrecta, 401 sin token, 401 con token
   inválido, `GET /api/auth/yo` (401 sin token / 200 con token), ciudadano bloqueado en
   `PATCH` (403), funcionario con entidad permitido (200) y que el reporte use el usuario
   del token.
 - `DashboardApiTest` cubre el alcance por entidad (funcionario y empresa), detalle y
-  cambio de estado entre entidades, filtros combinados, métricas, GeoJSON con fechas
-  ISO, catálogos, asignación administrativa, CORS y OpenAPI.
+  cambio de estado entre entidades, filtros combinados, nombres de barrio/entidad,
+  catálogo de entidades por rol, métricas, GeoJSON con fechas ISO, asignación
+  administrativa, CORS y OpenAPI.
 - Prueba manual verificada: registro → 401 sin token → subida autenticada → reporte con
   usuario del token → 403 como ciudadano → 200 tras promover a funcionario de la entidad.
 

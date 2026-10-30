@@ -87,7 +87,9 @@ Respuesta `200`:
       "claveImagenThumb": "incidentes/2026/10/27/.../thumb.jpg",
       "urlImagenThumb": "http://localhost:9000/reportes/...?X-Amz-Signature=...",
       "barrioId": 124,
+      "barrioNombre": "Centro",
       "entidadAsignadaId": 2,
+      "entidadNombre": "Empresa de Acueducto y Alcantarillado",
       "usuarioId": 124,
       "reportePadreId": null,
       "fechaCreacion": "2026-10-27T18:00:00Z",
@@ -307,10 +309,12 @@ Ambas rutas son públicas; el resto de `/api/**` exige token.
 - Catálogos GeoJSON y entidades.
 - Asignación por administrador; funcionario recibe `403`; entidad inexistente `404`.
 - La asignación no cambia el estado (se mantiene la separación de acciones).
+- Nombres de barrio y entidad en el listado.
+- Catálogo de entidades limitado a la entidad propia para funcionario.
 - Preflight CORS para el origen del dashboard.
 - OpenAPI disponible sin token.
 
-Resultado de la suite: **41/41 pruebas en verde** con `./mvnw clean test`.
+Resultado de la suite: **42/42 pruebas en verde** con `./mvnw clean test`.
 
 ---
 
